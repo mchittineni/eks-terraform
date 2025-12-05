@@ -46,13 +46,5 @@ prometheus_retention_days = 15  # Must be between 7 and 90 days
 common_tags = {
   Terraform = "true"
   Project   = "AWS Infrastructure"
-  ManagedBy = "Terraform"
+  ManagedBy = "AWS-EKS-Terraform"
 }
-
-# ==================== NOTES ====================
-# 1. Copy this file to terraform.tfvars and update with your values
-# 2. NEVER commit terraform.tfvars to version control
-# 3. Store sensitive values in a secure secret manager (Vault, AWS Secrets Manager, etc.)
-# 4. For production, use separate tfvars files: production.tfvars, staging.tfvars
-# 5. Make sure to configure your cloud provider credentials before running terraform:
-#    - AWS: Configure AWS CLI or set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY

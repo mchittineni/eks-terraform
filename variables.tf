@@ -169,6 +169,6 @@ variable "common_tags" {
   default = {
     Terraform = "true"
     Project   = "AWS Infrastructure"
-    ManagedBy = "Terraform"
+    ManagedBy = "AWS-EKS-Terraform"
   }
 }
