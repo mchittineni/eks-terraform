@@ -1,0 +1,108 @@
+# Checkov Configuration - Infrastructure as Code Security Scanner
+
+# Output format options: cli, json, junitxml, github_failed_check, sarif, cyclonedx
+output: cli
+quiet: false
+soft-fail: false
+framework: terraform
+
+# Directories to scan
+directory:
+  - .
+
+# Paths to skip during scanning
+skip-paths:
+  - .terraform
+  - .git
+  - docs
+  - tests
+  - scripts
+  - .terraform.lock.hcl
+  - '**/*.tfstate'
+  - '**/*.tfstate.backup'
+
+# Compact output format for easier reading
+compact: true
+
+# Fail on high-severity checks
+scan-secrets: true
+scan-extra-checks: true
+
+# Check categories to enforce
+check: 
+  # CKV1 - General security best practices
+  - CKV1_AWS_1   # CloudFront distribution encrypted
+  - CKV1_AWS_3   # S3 bucket versioning enabled
+  - CKV1_AWS_5   # CloudTrail enabled
+  - CKV1_AWS_11  # VPC flow logs enabled
+  - CKV1_AWS_12  # ALB access logging enabled
+  - CKV1_AWS_14  # S3 public access block
+  - CKV1_AWS_16  # RDS encryption
+  - CKV1_AWS_19  # IAM policy review
+  - CKV1_AWS_21  # CloudWatch log group encrypted
+  - CKV1_AWS_25  # API Gateway logging enabled
+  - CKV1_AWS_26  # CloudFront access logs enabled
+  - CKV1_AWS_29  # ElastiCache encryption enabled
+  - CKV1_AWS_30  # EC2 management of AWS Systems Manager
+  - CKV1_AWS_31  # VPC has flow logs
+  - CKV1_AWS_33  # KMS key rotation enabled
+  - CKV1_AWS_34  # AWS Lambda function logging
+  - CKV1_AWS_35  # CloudTrail log validation
+  - CKV1_AWS_36  # RDS backup enabled
+  - CKV1_AWS_38  # RDS backup retention
+  - CKV1_AWS_40  # IAM policy attachment review
+  - CKV1_AWS_41  # RDS encryption
+  - CKV1_AWS_42  # RDS IAM authentication
+  - CKV1_AWS_44  # DynamoDB point in time recovery
+  - CKV1_AWS_45  # VPC endpoint service private DNS
+  - CKV1_AWS_46  # S3 bucket logging
+  - CKV1_AWS_47  # ECR image scanning
+  - CKV1_AWS_48  # EBS encryption
+  - CKV1_AWS_49  # RDS backtracking enabled
+  - CKV1_AWS_50  # EC2 instance IMDSv2
+  - CKV1_AWS_51  # ElastiCache replication group encrypted
+  - CKV1_AWS_52  # RDS deletion protection
+  - CKV1_AWS_53  # SQS queue encryption
+  - CKV1_AWS_54  # DynamoDB encryption
+  - CKV1_AWS_55  # SNS topic encryption
+  - CKV1_AWS_56  # ALB HTTPS listener
+  - CKV1_AWS_57  # ELB HTTPS listener
+  - CKV1_AWS_58  # Lambda VPC
+  - CKV1_AWS_59  # IAM user MFA
+  - CKV1_AWS_61  # Lambda layers permissions
+  - CKV1_AWS_62  # RDS multi-AZ enabled
+  - CKV1_AWS_63  # EC2 security group ingress open
+  - CKV1_AWS_64  # ElastiCache auth enabled
+  - CKV1_AWS_65  # Lambda concurrency execution
+  - CKV1_AWS_66  # Lambda environment encrypted
+  - CKV1_AWS_67  # RDS publicly accessible
+  - CKV1_AWS_68  # KMS CMK rotation enabled
+  - CKV1_AWS_69  # S3 bucket default encryption
+  - CKV1_AWS_70  # Lambda reserved concurrent executions
+  - CKV1_AWS_71  # Lambda function policy
+  - CKV1_AWS_72  # VPC endpoint gateway policy
+  - CKV1_AWS_73  # S3 bucket object versioning
+  - CKV1_AWS_74  # DocumentDB encryption
+  - CKV1_AWS_75  # AppSync logging enabled
+  - CKV1_AWS_76  # CloudWatch log retention
+  - CKV1_AWS_77  # EC2 IMDSv2
+  - CKV1_AWS_78  # SageMaker encryption
+  - CKV1_AWS_80  # CloudFront logging enabled
+  - CKV1_AWS_86  # Lambda code signing
+  - CKV1_AWS_87  # Glue encryption
+  - CKV1_AWS_88  # Redshift encryption
+  - CKV1_AWS_89  # DMS replication encryption
+  - CKV1_AWS_91  # ECS task encrypted
+  - CKV1_AWS_92  # ECS task execution role
+  - CKV1_AWS_93  # RDS backup retention
+  - CKV1_AWS_95  # ECS logging
+  - CKV1_AWS_97  # RDS delete protection
+  - CKV1_AWS_98  # S3 versioning
+  - CKV1_AWS_99  # Lambda unrestricted permissions
+
+# Skip specific checks if needed
+skip-check:
+  - CKV_AWS_62  # S3 public access block (can be disabled for static sites)
+
+# Minimum severity to report (LOW, MEDIUM, HIGH, CRITICAL)
+minimum_severity: MEDIUM

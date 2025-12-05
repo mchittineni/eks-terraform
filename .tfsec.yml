@@ -1,0 +1,160 @@
+# tfsec Configuration - Infrastructure as Code Security Scanner for Terraform
+
+config_version: 1
+terraform_directory: .
+
+# Minimum severity to report: LOW, MEDIUM, HIGH, CRITICAL
+minimum_severity: MEDIUM
+
+# Don't fail the scan on findings
+soft_fail: false
+
+# Force format checks
+format: json
+
+# Exclude paths from scanning
+exclude_paths:
+  - .terraform
+  - .git
+  - docs
+  - tests
+  - scripts
+  - .terraform.lock.hcl
+  - '**/*.tfstate'
+  - '**/*.tfstate.backup'
+
+# Rules to enforce (AWS best practices)
+rules:
+  # Encryption and Key Management
+  aws001: # S3 bucket not encrypted
+    enabled: true
+  aws002: # S3 bucket versioning not enabled
+    enabled: true
+  aws003: # S3 bucket public access not blocked
+    enabled: true
+  aws004: # CloudTrail not enabled
+    enabled: true
+  aws005: # S3 bucket logging not enabled
+    enabled: true
+  aws006: # S3 bucket access logging not enabled
+    enabled: true
+  aws007: # CloudFront distribution not encrypted
+    enabled: true
+  aws008: # S3 bucket has public ACL
+    enabled: true
+  aws009: # S3 block public ACL not enabled
+    enabled: true
+  aws010: # VPC Flow Logs not enabled
+    enabled: true
+  aws011: # ALB access logging not enabled
+    enabled: true
+  aws012: # S3 bucket versioning not enabled
+    enabled: true
+  aws013: # ALB not using HTTPS
+    enabled: true
+  aws014: # ALB not configured with HTTPS listener
+    enabled: true
+  aws015: # Redshift cluster not encrypted
+    enabled: true
+  aws016: # API Gateway access logging not configured
+    enabled: true
+  aws017: # CloudTrail log validation not enabled
+    enabled: true
+  aws018: # EC2 security group allows all traffic
+    enabled: true
+  aws019: # Security Group allows public access
+    enabled: true
+  aws020: # RDS cluster not encrypted
+    enabled: true
+  aws021: # CloudWatch log group not encrypted
+    enabled: true
+  aws022: # RDS database instance backup retention not set
+    enabled: true
+  aws023: # ElastiCache replication group encryption not enabled
+    enabled: true
+  aws024: # ElastiCache replication group auth token not set
+    enabled: true
+  aws025: # API Gateway request logging not enabled
+    enabled: true
+  aws026: # ALB not using secure TLS version
+    enabled: true
+  aws027: # CloudFront distribution geo-restriction not enabled
+    enabled: true
+  aws028: # API Gateway cache not encrypted
+    enabled: true
+  aws029: # Elasticsearch domain not encrypted
+    enabled: true
+  aws030: # Lambda environment variables not encrypted
+    enabled: true
+  aws031: # RDS database instance not multi-AZ
+    enabled: true
+  aws032: # RDS database cluster not encrypted
+    enabled: true
+  aws033: # KMS key rotation not enabled
+    enabled: true
+  aws034: # Elasticsearch domain logging not enabled
+    enabled: true
+  aws035: # DynamoDB point-in-time recovery not enabled
+    enabled: true
+  aws036: # DynamoDB Table item_key not encrypted
+    enabled: true
+  aws037: # DynamoDB Table billing_mode not set to PAY_PER_REQUEST
+    enabled: true
+  aws038: # SNS topic not encrypted with KMS key
+    enabled: true
+  aws039: # SQS queue not encrypted with KMS key
+    enabled: true
+  aws040: # IAM policy allows unknown principals
+    enabled: true
+  aws041: # Security group rules allow public access
+    enabled: true
+  aws042: # RDS database instance publicly accessible
+    enabled: true
+  aws043: # RDS database instance encryption not enabled
+    enabled: true
+  aws044: # IAM policy allows admin privileges
+    enabled: true
+  aws045: # VPC endpoint service not using private DNS
+    enabled: true
+  aws046: # Lambda function not in VPC
+    enabled: true
+  aws047: # Lambda execution role policy not least privilege
+    enabled: true
+  aws048: # ECR image scan not enabled
+    enabled: true
+  aws049: # ECS cluster logging not enabled
+    enabled: true
+  aws050: # IAM user not using MFA
+    enabled: true
+  aws051: # RDS instance not using security group
+    enabled: true
+  aws052: # ELB not using HTTPS
+    enabled: true
+  aws053: # CloudFront distribution has default cache behavior without viewer protocol policy
+    enabled: true
+  aws054: # RDS instance not using encryption
+    enabled: true
+  aws055: # S3 bucket missing encryption rule
+    enabled: true
+  aws056: # ECS task definition logging not enabled
+    enabled: true
+  aws057: # ECS service not using security groups
+    enabled: true
+  aws058: # Lambda function without explicit security group
+    enabled: true
+  aws059: # EBS volume not encrypted
+    enabled: true
+  aws060: # Security group rule does not have description
+    enabled: false  # Can be noisy, enable if desired
+  aws061: # Security group rule allows port 22 (SSH) from anywhere
+    enabled: true
+  aws062: # Security group rule allows port 3389 (RDP) from anywhere
+    enabled: true
+  aws063: # CloudFront distribution is not using security headers
+    enabled: true
+  aws064: # CloudFront distribution does not enforce HTTPS
+    enabled: true
+
+# General settings
+providers:
+  - aws
