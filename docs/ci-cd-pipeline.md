@@ -208,7 +208,7 @@ jobs:
           echo "TF_VAR_environment=${{ env.TERRAFORM_ENVIRONMENT }}" >> "$GITHUB_ENV"
           echo "TF_VAR_grafana_admin_password=${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
           echo "TF_VAR_owner_email=${{ env.TERRAFORM_OWNER_EMAIL }}" >> "$GITHUB_ENV"
-        # store the TF_Var's as follows to loading the .tfvars while running the plan
+        # store the TF_Var's as follows for loading the values into .tfvars file while running the plan
 
       - name: Terraform Setup
         uses: hashicorp/setup-terraform@v3

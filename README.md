@@ -66,6 +66,7 @@ K8-s-MultiCloud-Setup/
 │
 ├── 📁 docs/                             # Comprehensive documentation
 │   ├── architecture.md                  # System design, component relationships
+│   ├── ci-cd-pipeline.md                # Step-by-step pipeline instructions
 │   ├── deployment-guide.md              # Step-by-step deployment instructions
 │   ├── security.md                      # Security best practices, compliance info
 │   └── troubleshooting.md               # Common issues and solutions
@@ -211,17 +212,23 @@ nano terraform.tfvars
 # - aws_node_count: 2-10 (recommended: 6)
 # - grafana_admin_password: 12+ chars, uppercase, lowercase, number, special char
 
-# 4. Ensure backend S3 bucket exists
+# 4. Configure AWS Credentials into your local
+
+export AWS_ACCESS_KEY_ID="xxxxxxx"
+export AWS_SECRET_ACCESS_KEY="xxxxxxx"
+export AWS_SESSION_TOKEN="xxxxxxx"
+
+# 5. Ensure backend S3 bucket exists
 export AWS_REGION=us-east-1
 ./scripts/ensure_backend_bucket.sh
 
-# 5. Initialize Terraform
+# 6. Initialize Terraform
 ./scripts/init.sh
 
-# 6. Plan deployment
+# 7. Plan deployment
 terraform plan -out=tfplan
 
-# 7. Apply configuration
+# 8. Apply configuration
 terraform apply tfplan
 ```
 
@@ -527,10 +534,10 @@ export AWS_REGION=us-east-1
 Comprehensive guides available in `docs/` directory:
 
 - **[architecture.md](docs/architecture.md)**: EKS cluster design, AWS networking, monitoring stack architecture
+- **[ci-cd-pipeline.md](docs/ci-cd-pipeline.md)**: GitHub Actions CI/CD workflows, automation, and deployment pipeline setup
 - **[deployment-guide.md](docs/deployment-guide.md)**: Complete step-by-step deployment instructions with examples
 - **[security.md](docs/security.md)**: Security best practices, encryption, IAM, compliance, and security checklist
 - **[troubleshooting.md](docs/troubleshooting.md)**: Terraform, Kubernetes, EKS, monitoring, and database troubleshooting
-- **[ci-cd-pipeline.md](docs/ci-cd-pipeline.md)**: GitHub Actions CI/CD workflows, automation, and deployment pipeline setup
 
 ## 🤝 Contributing
 
