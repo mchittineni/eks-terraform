@@ -99,40 +99,40 @@ K8-s-MultiCloud-Setup/
 ┌─────────────────────────────────────────────────────────────┐
 │                   AWS MULTI-AZ DEPLOYMENT                   │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  VPC (CIDR: 10.0.0.0/16)                             │  │
-│  │  ├─ Public Subnets (AZ-1, AZ-2, AZ-3)               │  │
-│  │  │  └─ NAT Gateways + Internet Gateway               │  │
-│  │  ├─ Private Subnets (AZ-1, AZ-2, AZ-3)              │  │
-│  │  │  └─ EKS Nodes, RDS, Monitoring                    │  │
-│  │  └─ Security Groups & NACLs                          │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                               │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  EKS Cluster (Kubernetes Control Plane)              │  │
-│  │  ├─ Managed Node Groups (Auto Scaling)               │  │
-│  │  ├─ Prometheus + Grafana (Monitoring)                │  │
-│  │  ├─ CoreDNS, kube-proxy, VPC CNI                      │  │
-│  │  └─ RBAC & Network Policies                          │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                               │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Data Layer                                          │  │
-│  │  ├─ RDS (PostgreSQL/MySQL) Multi-AZ                 │  │
-│  │  ├─ S3 Buckets (Versioning, Encryption)             │  │
-│  │  ├─ AWS Secrets Manager                              │  │
-│  │  └─ DynamoDB (Optional)                              │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                               │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Observability & Logging                             │  │
-│  │  ├─ CloudWatch Logs & Alarms                         │  │
-│  │  ├─ Prometheus Metrics                               │  │
-│  │  ├─ Grafana Dashboards                               │  │
-│  │  └─ ELK Stack (Elasticsearch, Logstash, Kibana)      │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                               │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  VPC (CIDR: 10.0.0.0/16)                             │   │
+│  │  ├─ Public Subnets (AZ-1, AZ-2, AZ-3)                │   │
+│  │  │  └─ NAT Gateways + Internet Gateway               │   │
+│  │  ├─ Private Subnets (AZ-1, AZ-2, AZ-3)               │   │
+│  │  │  └─ EKS Nodes, RDS, Monitoring                    │   │
+│  │  └─ Security Groups & NACLs                          │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  EKS Cluster (Kubernetes Control Plane)              │   │
+│  │  ├─ Managed Node Groups (Auto Scaling)               │   │
+│  │  ├─ Prometheus + Grafana (Monitoring)                │   │
+│  │  ├─ CoreDNS, kube-proxy, VPC CNI                     │   │
+│  │  └─ RBAC & Network Policies                          │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Data Layer                                          │   │
+│  │  ├─ RDS (PostgreSQL/MySQL) Multi-AZ                  │   │
+│  │  ├─ S3 Buckets (Versioning, Encryption)              │   │
+│  │  ├─ AWS Secrets Manager                              │   │
+│  │  └─ DynamoDB (Optional)                              │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Observability & Logging                             │   │
+│  │  ├─ CloudWatch Logs & Alarms                         │   │
+│  │  ├─ Prometheus Metrics                               │   │
+│  │  ├─ Grafana Dashboards                               │   │
+│  │  └─ ELK Stack (Elasticsearch, Logstash, Kibana)      │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
