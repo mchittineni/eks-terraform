@@ -530,23 +530,7 @@ Comprehensive guides available in `docs/` directory:
 - **[deployment-guide.md](docs/deployment-guide.md)**: Complete step-by-step deployment instructions with examples
 - **[security.md](docs/security.md)**: Security best practices, encryption, IAM, compliance, and security checklist
 - **[troubleshooting.md](docs/troubleshooting.md)**: Terraform, Kubernetes, EKS, monitoring, and database troubleshooting
-
----
-
-## 🚧 Roadmap
-
-- [x] AWS core infrastructure (VPC, EKS, RDS)
-- [x] Centralized monitoring (Prometheus, Grafana)
-- [x] Security scanning (tfsec, Checkov, tflint)
-- [ ] Multi-region disaster recovery
-- [ ] Terraform modules for additional clouds (Azure, GCP)
-- [ ] GitOps integration (ArgoCD)
-- [ ] Service Mesh (Istio/Linkerd)
-- [ ] Automated cost optimization (Infracost)
-- [ ] Ansible configuration management
-- [ ] Infrastructure as Code testing (Terratest)
-
----
+- **[ci-cd-pipeline.md](docs/ci-cd-pipeline.md)**: GitHub Actions CI/CD workflows, automation, and deployment pipeline setup
 
 ## 🤝 Contributing
 
