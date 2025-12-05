@@ -37,7 +37,7 @@ provider "aws" {
     tags = {
       Project     = var.project_name
       Environment = var.environment
-      ManagedBy   = "Terraform"
+      ManagedBy   = "AWS-EKS-Terraform"
       Owner       = var.owner_email
     }
   }

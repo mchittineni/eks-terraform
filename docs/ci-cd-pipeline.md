@@ -8,38 +8,38 @@ This guide explains how to set up and configure a CI/CD pipeline for automated i
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Actions Workflow                   │
+│                    GitHub Actions Workflow                  │
 ├─────────────────────────────────────────────────────────────┤
-│                                                               │
+│                                                             │
 │  Trigger Events (Push, Pull Request, Manual)                │
-│         ↓                                                     │
+│         ↓                                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  Validate & Format Check                            │    │
 │  │  - terraform fmt                                    │    │
-│  │  - terraform validate                              │    │
+│  │  - terraform validate                               │    │
 │  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                     │
+│         ↓                                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  Security Scanning                                  │    │
 │  │  - tfsec                                            │    │
 │  │  - checkov                                          │    │
 │  │  - tflint                                           │    │
 │  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                     │
+│         ↓                                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Plan (PR) / Plan & Apply (Main)                   │    │
+│  │  Plan (PR) / Plan & Apply (Main)                    │    │
 │  │  - terraform plan                                   │    │
 │  │  - (Optional) Manual approval                       │    │
 │  │  - terraform apply                                  │    │
 │  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                     │
+│         ↓                                                   │
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │  Post-Deployment                                    │    │
 │  │  - Output infrastructure details                    │    │
 │  │  - Verify deployment                                │    │
 │  │  - Notify team                                      │    │
 │  └─────────────────────────────────────────────────────┘    │
-│                                                               │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
