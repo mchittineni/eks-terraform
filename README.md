@@ -27,7 +27,7 @@ Complete Infrastructure as Code (IaC) solution for deploying a production-ready 
 ## 📁 Complete Project Structure
 
 ```
-K8-s-MultiCloud-Setup/
+EKS-Terraform-Infrastructure-Setup/
 │
 ├── 📄 Root Configuration Files
 │   ├── main.tf                          # Primary Terraform configuration and provider setup
@@ -213,7 +213,6 @@ nano terraform.tfvars
 # - grafana_admin_password: 12+ chars, uppercase, lowercase, number, special char
 
 # 4. Configure AWS Credentials into your local
-
 export AWS_ACCESS_KEY_ID="xxxxxxx"
 export AWS_SECRET_ACCESS_KEY="xxxxxxx"
 export AWS_SESSION_TOKEN="xxxxxxx"

@@ -42,14 +42,16 @@ provider "aws" {
     }
   }
 }
-resource "aws_secretsmanager_secret" "Terraform" {
-  name        = "Terraform"
-  description = "Terraform variables and metadata for ${var.project_name}-${var.environment}"
+data "aws_secretsmanager_secret" "Terraform" {
+  name = "Terraform"
+}
 
-  tags = merge(var.common_tags, {
-    Project     = var.project_name
-    Environment = var.environment
-    Owner       = var.owner_email
+resource "aws_secretsmanager_secret_version" "Terraform" {
+  secret_id = data.aws_secretsmanager_secret.Terraform.id
+  secret_string = jsonencode({
+    project_name = var.project_name
+    environment  = var.environment
+    owner_email  = var.owner_email
   })
 }
 
@@ -59,8 +61,7 @@ resource "aws_secretsmanager_secret" "Terraform" {
 // Note: Outputs are accessed using [0] because the module is now a list.
 
 module "aws_networking" {
-  source = "./modules/aws/networking"
-
+  source               = "./modules/aws/networking"
   vpc_cidr             = var.aws_vpc_cidr
   availability_zones   = var.aws_availability_zones
   public_subnet_cidrs  = var.aws_public_subnet_cidrs
@@ -70,8 +71,7 @@ module "aws_networking" {
 }
 
 module "aws_compute" {
-  source = "./modules/aws/compute"
-
+  source             = "./modules/aws/compute"
   vpc_id             = module.aws_networking.vpc_id
   private_subnet_ids = module.aws_networking.private_subnet_ids
   public_subnet_ids  = module.aws_networking.public_subnet_ids
@@ -82,8 +82,7 @@ module "aws_compute" {
 }
 
 module "aws_database" {
-  source = "./modules/aws/database"
-
+  source             = "./modules/aws/database"
   vpc_id             = module.aws_networking.vpc_id
   private_subnet_ids = module.aws_networking.private_subnet_ids
   db_name            = var.aws_db_name
@@ -95,11 +94,9 @@ module "aws_database" {
 }
 
 module "aws_monitoring" {
-  source = "./modules/aws/monitoring"
-
-  cluster_name = module.aws_compute.cluster_name
-  environment  = var.environment
-
+  source                 = "./modules/aws/monitoring"
+  cluster_name           = module.aws_compute.cluster_name
+  environment            = var.environment
   enable_cloudwatch_logs = var.enable_monitoring
   enable_prometheus      = var.enable_monitoring
   alert_email            = var.alert_email
@@ -110,11 +107,9 @@ module "aws_monitoring" {
 
 module "centralized_monitoring" {
   source = "./modules/monitoring/centralized"
-
   // AWS outputs are accessed with and set to null if disabled
   aws_cloudwatch_log_group = var.enable_aws ? module.aws_monitoring.log_group_name : null
-
-  grafana_admin_password = var.grafana_admin_password
-  prometheus_retention   = var.prometheus_retention_days
-  environment            = var.environment
+  grafana_admin_password   = var.grafana_admin_password
+  prometheus_retention     = var.prometheus_retention_days
+  environment              = var.environment
 }
