@@ -14,7 +14,7 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-### IAM role for Grafana workspace
+# ==================== IAM: Grafana workspace ====================
 resource "aws_iam_role" "grafana" {
   name        = "grafana-${var.environment}-workspace-role"
   description = "IAM role for Grafana workspace and service access"
@@ -61,7 +61,7 @@ resource "aws_iam_role_policy" "grafana_prometheus" {
   })
 }
 
-### Store Grafana admin credentials in Secrets Manager
+# ==================== Grafana Admin Secrets ====================
 resource "aws_secretsmanager_secret" "grafana_admin" {
   name        = "central-grafana-${var.environment}"
   tags        = local.tags
@@ -76,7 +76,7 @@ resource "aws_secretsmanager_secret_version" "grafana_admin" {
   })
 }
 
-### SSM parameter: source catalog for monitoring inputs
+# ==================== SSM: Source catalog  ====================
 resource "aws_ssm_parameter" "source_catalog" {
   name = "/central-monitoring/${var.environment}/sources"
   type = "String"
@@ -88,13 +88,13 @@ resource "aws_ssm_parameter" "source_catalog" {
   description = "JSON catalog of monitoring data sources for the ${var.environment} environment"
 }
 
-### Prometheus workspace
+# ==================== Prometheus workspace ====================
 resource "aws_prometheus_workspace" "central" {
   alias = substr(replace("${var.prometheus_workspace_alias}-${random_id.suffix.hex}", "_", "-"), 0, 100)
   tags  = local.tags
 }
 
-### Managed Grafana workspace
+# ==================== Grafana workspace ====================
 resource "aws_grafana_workspace" "central" {
   name                      = "${var.grafana_workspace_name}-${random_id.suffix.hex}"
   account_access_type       = "CURRENT_ACCOUNT"
@@ -106,7 +106,7 @@ resource "aws_grafana_workspace" "central" {
   tags                      = local.tags
 }
 
-### Optional OpenSearch domain for logs/search
+# ==================== OpenSearch workspace ====================
 resource "aws_opensearch_domain" "logs" {
   count       = var.opensearch_enabled ? 1 : 0
   domain_name = substr(replace("logs-${var.environment}-${random_id.suffix.hex}", "_", "-"), 0, 28)
@@ -148,14 +148,14 @@ resource "aws_opensearch_domain" "logs" {
   tags = local.tags
 }
 
-### SNS topic for central alerts
+# ==================== Alerting (SNS) ====================
 resource "aws_sns_topic" "central_alerts" {
   name = "central-monitoring-${var.environment}"
   display_name = "Central Monitoring Alerts - ${var.environment}"
   tags = local.tags
 }
 
-### Event rule to capture health events
+# ==================== CloudWatch Events ====================
 resource "aws_cloudwatch_event_rule" "health" {
   name        = "central-monitoring-${var.environment}-health"
   description = "Capture health events across AWS accounts"
@@ -171,7 +171,7 @@ resource "aws_cloudwatch_event_target" "health_to_sns" {
   arn       = aws_sns_topic.central_alerts.arn
 }
 
-### CloudWatch dashboard for central monitoring
+# ==================== CloudWatch Dashboards ====================
 resource "aws_cloudwatch_dashboard" "central" {
   dashboard_name = "central-monitoring-${var.environment}"
   dashboard_body = jsonencode({

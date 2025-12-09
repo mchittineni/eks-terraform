@@ -12,6 +12,7 @@ data "aws_vpc" "selected" {
   id = var.vpc_id
 }
 
+# ==================== Random Password ====================
 resource "random_password" "master" {
   length           = 20
   override_special = "!@#%^*-_=+"
@@ -25,6 +26,8 @@ resource "random_password" "master" {
 resource "random_id" "bucket" {
   byte_length = 4
 }
+
+# ==================== RDS Security Rules ====================
 resource "aws_db_subnet_group" "this" {
   name        = "${var.db_name}-${var.environment}-subnet-group"
   subnet_ids  = var.private_subnet_ids
@@ -68,7 +71,7 @@ resource "aws_db_parameter_group" "postgres" {
   tags = local.merged_tags
 }
 
-# IAM role used for enhanced monitoring must exist before the RDS instance references it
+# ==================== RDS IAM : Monitoring ====================
 resource "aws_iam_role" "rds_monitoring" {
   name        = "${var.db_name}-${var.environment}-monitoring-role"
   description = "IAM role used by RDS Enhanced Monitoring for ${var.db_name} in ${var.environment}"
@@ -94,7 +97,7 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
-# Backup S3 bucket and associated configuration
+# ==================== RDS Backup S3 ====================
 resource "aws_s3_bucket" "backups" {
   bucket = lower(replace("${var.db_name}-${var.environment}-${random_id.bucket.hex}", "_", "-"))
   tags   = local.merged_tags
@@ -126,7 +129,7 @@ resource "aws_s3_bucket_public_access_block" "backups" {
   ignore_public_acls      = true
 }
 
-# RDS instance
+# ==================== RDS Instance ====================
 resource "aws_db_instance" "this" {
   identifier                          = "${var.db_name}-${var.environment}"
   allocated_storage                   = var.allocated_storage
@@ -160,7 +163,7 @@ resource "aws_db_instance" "this" {
   tags = local.merged_tags
 }
 
-# Secrets for DB credentials (secret created before the version)
+# ==================== RDS Database Secrets ====================
 resource "aws_secretsmanager_secret" "db_credentials" {
   name        = "${var.db_name}-${var.environment}-db-credentials"
   description = "Database credentials for ${var.db_name} in ${var.environment} environment"
