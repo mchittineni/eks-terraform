@@ -1,4 +1,5 @@
-// The Terraform block remains standard as it defines requirements and state backend.
+// ==================== Terraform Configuration ====================
+// Defines the required Terraform version, providers, and the remote S3 state backend.
 terraform {
   required_version = ">= 1.13.0"
 
@@ -17,6 +18,7 @@ terraform {
     }
   }
 
+  // Configuration for the S3 backend to store the Terraform state file securely.
   backend "s3" {
     bucket       = "terraform-state-multicloud-infra"
     key          = "global/terraform.tfstate"
@@ -27,25 +29,30 @@ terraform {
 }
 
 // ==================== Provider Configurations ====================
-// Providers are only configured if their respective 'enable' variable is true.
-
+// Configuration for the AWS Provider.
 provider "aws" {
-  # count  = var.enable_aws ? 1 : 0
   region = var.aws_region
 
   default_tags {
     tags = {
       Project     = var.project_name
       Environment = var.environment
-      ManagedBy   = "AWS-EKS-Terraform"
+      Application = "AWS-EKS-Terraform"
       Owner       = var.owner_email
+      CostCenter  = var.cost_center
     }
   }
 }
+
+// ==================== AWS Secrets Manager (Data and Resource) ====================
+// Data source to reference the existing AWS Secrets Manager secret named "Terraform".
 data "aws_secretsmanager_secret" "Terraform" {
   name = "Terraform"
 }
 
+// Resource to create a new version for the 'Terraform' secret.
+// This stores root-level metadata (project, environment, owner) as a JSON string.
+// This data can be consumed by other services or CI/CD pipelines.
 resource "aws_secretsmanager_secret_version" "Terraform" {
   secret_id = data.aws_secretsmanager_secret.Terraform.id
   secret_string = jsonencode({
@@ -55,11 +62,8 @@ resource "aws_secretsmanager_secret_version" "Terraform" {
   })
 }
 
-
-// ==================== AWS Infrastructure ====================
-// AWS modules only run if var.enable_aws is true.
-// Note: Outputs are accessed using [0] because the module is now a list.
-
+// ==================== AWS Infrastructure Modules ====================
+// Module for configuring the VPC, subnets (public/private), Internet Gateway, and NAT Gateways.
 module "aws_networking" {
   source               = "./modules/aws/networking"
   vpc_cidr             = var.aws_vpc_cidr
@@ -70,6 +74,7 @@ module "aws_networking" {
   project_name         = var.project_name
 }
 
+// Module for provisioning the EKS cluster and its worker nodes (EC2 instances or managed node groups).
 module "aws_compute" {
   source             = "./modules/aws/compute"
   vpc_id             = module.aws_networking.vpc_id
@@ -81,6 +86,7 @@ module "aws_compute" {
   environment        = var.environment
 }
 
+// Module for deploying an Amazon RDS relational database instance (e.g., PostgreSQL, MySQL).
 module "aws_database" {
   source             = "./modules/aws/database"
   vpc_id             = module.aws_networking.vpc_id
@@ -93,6 +99,7 @@ module "aws_database" {
   environment        = var.environment
 }
 
+// Module for setting up AWS-native monitoring resources (e.g., CloudWatch Log Groups, SNS for alerting).
 module "aws_monitoring" {
   source                 = "./modules/aws/monitoring"
   cluster_name           = module.aws_compute.cluster_name
@@ -102,12 +109,11 @@ module "aws_monitoring" {
   alert_email            = var.alert_email
 }
 
-// ==================== Cloud Monitoring ====================
-// Inputs are conditionally set to the module output or null based on the 'enable' variables.
-
+// ==================== Centralized Monitoring Module ====================
+// This module sets up centralized monitoring tools (e.g., Grafana, Prometheus).
 module "centralized_monitoring" {
   source = "./modules/monitoring/centralized"
-  // AWS outputs are accessed with and set to null if disabled
+  // Conditionally pass the AWS CloudWatch Log Group name only if AWS is enabled.
   aws_cloudwatch_log_group = var.enable_aws ? module.aws_monitoring.log_group_name : null
   grafana_admin_password   = var.grafana_admin_password
   prometheus_retention     = var.prometheus_retention_days

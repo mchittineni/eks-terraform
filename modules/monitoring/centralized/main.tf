@@ -14,24 +14,56 @@ resource "random_id" "suffix" {
   byte_length = 4
 }
 
-resource "aws_prometheus_workspace" "central" {
-  alias = substr(replace("${var.environment}-central-${random_id.suffix.hex}", "_", "-"), 0, 100)
-  tags  = local.tags
+# ==================== IAM: Grafana workspace ====================
+resource "aws_iam_role" "grafana" {
+  name        = "grafana-${var.environment}-workspace-role"
+  description = "IAM role for Grafana workspace and service access"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "grafana.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = local.tags
 }
 
-resource "aws_grafana_workspace" "central" {
-  name                      = "grafana-${var.environment}-${random_id.suffix.hex}"
-  account_access_type       = "CURRENT_ACCOUNT"
-  authentication_providers  = ["SAML"]
-  data_sources              = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
-  notification_destinations = ["SNS"]
-  permission_type           = "SERVICE_MANAGED"
-  role_arn                  = aws_iam_role.grafana.arn
-  tags                      = local.tags
+resource "aws_iam_role_policy_attachment" "grafana_cloudwatch" {
+  role       = aws_iam_role.grafana.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
 }
 
+resource "aws_iam_role_policy" "grafana_prometheus" {
+  name = "grafana-prometheus-policy-${random_id.suffix.hex}"
+  role = aws_iam_role.grafana.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "aps:DescribeWorkspace",
+          "aps:DescribeLoggingConfiguration",
+          "aps:ListWorkspaces",
+          "aps:GetSeries",
+          "aps:QueryMetrics"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# ==================== Grafana Admin Secrets ====================
 resource "aws_secretsmanager_secret" "grafana_admin" {
-  name        = "central-grafana-${var.environment}"
+  name        = "central-grafana-${var.environment}-admin-credentials"
   tags        = local.tags
   description = "Credentials for the central Grafana admin user"
 }
@@ -44,6 +76,7 @@ resource "aws_secretsmanager_secret_version" "grafana_admin" {
   })
 }
 
+# ==================== SSM: Source catalog  ====================
 resource "aws_ssm_parameter" "source_catalog" {
   name = "/central-monitoring/${var.environment}/sources"
   type = "String"
@@ -55,11 +88,31 @@ resource "aws_ssm_parameter" "source_catalog" {
   description = "JSON catalog of monitoring data sources for the ${var.environment} environment"
 }
 
+# ==================== Prometheus workspace ====================
+resource "aws_prometheus_workspace" "central" {
+  alias = substr(replace("${var.environment}-central-${random_id.suffix.hex}", "_", "-"), 0, 100)
+  tags  = local.tags
+}
+
+# ==================== Grafana workspace ====================
+resource "aws_grafana_workspace" "central" {
+  name                      = "grafana-${var.environment}-${random_id.suffix.hex}"
+  account_access_type       = "CURRENT_ACCOUNT"
+  authentication_providers  = ["SAML"]
+  data_sources              = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
+  notification_destinations = ["SNS"]
+  permission_type           = "SERVICE_MANAGED"
+  role_arn                  = aws_iam_role.grafana.arn
+  tags                      = local.tags
+}
+
+# ==================== OpenSearch workspace ====================
 resource "aws_opensearch_domain" "logs" {
+  count          = var.opensearch_enabled ? 1 : 0
   domain_name    = substr(replace("logs-${var.environment}-${random_id.suffix.hex}", "_", "-"), 0, 28)
   engine_version = "OpenSearch_2.13"
   auto_tune_options {
-    desired_state = "DISABLED" # Disable autotune for t3 instances as it's not supported
+    desired_state = "DISABLED"
   }
   cluster_config {
     instance_type          = "t3.small.search"
@@ -95,11 +148,14 @@ resource "aws_opensearch_domain" "logs" {
   tags = local.tags
 }
 
+# ==================== Alerting (SNS) ====================
 resource "aws_sns_topic" "central_alerts" {
-  name = "central-monitoring-${var.environment}"
-  tags = local.tags
+  name         = "central-monitoring-${var.environment}"
+  display_name = "Central Monitoring Alerts - ${var.environment}"
+  tags         = local.tags
 }
 
+# ==================== CloudWatch Events ====================
 resource "aws_cloudwatch_event_rule" "health" {
   name        = "central-monitoring-${var.environment}-health"
   description = "Capture health events across AWS accounts"
@@ -115,6 +171,7 @@ resource "aws_cloudwatch_event_target" "health_to_sns" {
   arn       = aws_sns_topic.central_alerts.arn
 }
 
+# ==================== CloudWatch Dashboards ====================
 resource "aws_cloudwatch_dashboard" "central" {
   dashboard_name = "central-monitoring-${var.environment}"
   dashboard_body = jsonencode({
@@ -129,7 +186,7 @@ resource "aws_cloudwatch_dashboard" "central" {
           ],
           "title" : "Prometheus Rule Evaluations",
           "stat" : "Sum",
-          "region" : data.aws_region.current.name,
+          "region" : data.aws_region.current.id,
           "period" : 300,
           "yAxis" : {
             "left" : {
@@ -137,48 +194,6 @@ resource "aws_cloudwatch_dashboard" "central" {
             }
           }
         }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "grafana" {
-  name        = "grafana-${var.environment}-workspace-role"
-  description = "IAM role for Grafana workspace and service access"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "grafana.amazonaws.com"
-        }
-      }
-    ]
-  })
-  tags = local.tags
-}
-
-resource "aws_iam_role_policy_attachment" "grafana_cloudwatch" {
-  role       = aws_iam_role.grafana.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
-}
-
-resource "aws_iam_role_policy" "grafana_prometheus" {
-  name = "grafana-prometheus-policy"
-  role = aws_iam_role.grafana.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "aps:DescribeWorkspace",
-          "aps:DescribeLoggingConfiguration",
-          "aps:ListWorkspaces"
-        ]
-        Resource = "*"
       }
     ]
   })

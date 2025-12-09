@@ -12,9 +12,10 @@ data "aws_vpc" "selected" {
   id = var.vpc_id
 }
 
+# ==================== Random Password ====================
 resource "random_password" "master" {
   length           = 20
-  override_special = "!@#%^*-_=+"
+  override_special = "!#%^*-_=+"
   special          = true
   min_upper        = 2
   min_lower        = 4
@@ -26,16 +27,19 @@ resource "random_id" "bucket" {
   byte_length = 4
 }
 
+# ==================== RDS Security Rules ====================
 resource "aws_db_subnet_group" "this" {
-  name       = "${var.db_name}-${var.environment}-subnet-group"
-  subnet_ids = var.private_subnet_ids
-  tags       = local.merged_tags
+  name        = "${var.db_name}-${var.environment}-subnet-group"
+  subnet_ids  = var.private_subnet_ids
+  description = "RDS subnet group for ${var.db_name} in ${var.environment}"
+  tags        = local.merged_tags
 }
 
 resource "aws_security_group" "db" {
   name        = "${var.db_name}-${var.environment}-db-sg"
   description = "Security group for RDS instance"
   vpc_id      = var.vpc_id
+
   ingress {
     from_port   = 5432
     to_port     = 5432
@@ -43,12 +47,14 @@ resource "aws_security_group" "db" {
     cidr_blocks = [data.aws_vpc.selected.cidr_block]
     description = "Allow Postgres traffic from within the VPC"
   }
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   tags = local.merged_tags
 }
 
@@ -56,13 +62,74 @@ resource "aws_db_parameter_group" "postgres" {
   name        = "${var.db_name}-${var.environment}-pg"
   family      = "postgres14"
   description = "Custom parameter group enforcing SSL"
+
   parameter {
     name  = "rds.force_ssl"
     value = "1"
   }
+
   tags = local.merged_tags
 }
 
+# ==================== RDS IAM : Monitoring ====================
+resource "aws_iam_role" "rds_monitoring" {
+  name        = "${var.db_name}-${var.environment}-monitoring-role"
+  description = "IAM role used by RDS Enhanced Monitoring for ${var.db_name} in ${var.environment}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = local.merged_tags
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring" {
+  role       = aws_iam_role.rds_monitoring.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}
+
+# ==================== RDS Backup S3 ====================
+resource "aws_s3_bucket" "backups" {
+  bucket = lower(replace("${var.db_name}-${var.environment}-${random_id.bucket.hex}", "_", "-"))
+  tags   = local.merged_tags
+}
+
+resource "aws_s3_bucket_versioning" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "backups" {
+  bucket                  = aws_s3_bucket.backups.id
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+  ignore_public_acls      = true
+}
+
+# ==================== RDS Instance ====================
 resource "aws_db_instance" "this" {
   identifier                          = "${var.db_name}-${var.environment}"
   allocated_storage                   = var.allocated_storage
@@ -92,63 +159,13 @@ resource "aws_db_instance" "this" {
   iam_database_authentication_enabled = true
   auto_minor_version_upgrade          = true
   copy_tags_to_snapshot               = true
-  tags                                = local.merged_tags
-}
 
-resource "aws_iam_role" "rds_monitoring" {
-  name        = "${var.db_name}-${var.environment}-monitoring-role"
-  description = "IAM role used by RDS Enhanced Monitoring for ${var.db_name} in ${var.environment}"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "monitoring.rds.amazonaws.com"
-        }
-      }
-    ]
-  })
   tags = local.merged_tags
 }
 
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
-}
-
-resource "aws_s3_bucket" "backups" {
-  bucket = lower(replace("${var.db_name}-${var.environment}-${random_id.bucket.hex}", "_", "-"))
-  tags   = local.merged_tags
-}
-
-resource "aws_s3_bucket_versioning" "backups" {
-  bucket = aws_s3_bucket.backups.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "backups" {
-  bucket = aws_s3_bucket.backups.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "backups" {
-  bucket                  = aws_s3_bucket.backups.id
-  block_public_acls       = true
-  block_public_policy     = true
-  restrict_public_buckets = true
-  ignore_public_acls      = true
-}
-
+# ==================== RDS Database Secrets ====================
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name        = "${var.db_name}-${var.environment}-db-credentials"
+  name        = "${var.db_name}-${var.environment}-db-credentials-secret"
   description = "Database credentials for ${var.db_name} in ${var.environment} environment"
   tags        = local.merged_tags
 }

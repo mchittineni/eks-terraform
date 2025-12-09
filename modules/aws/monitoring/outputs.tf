@@ -4,8 +4,8 @@ output "log_group_name" {
 }
 
 output "sns_topic_arn" {
-  description = "SNS topic used for monitoring alerts"
-  value       = aws_sns_topic.alerts.arn
+  description = "SNS topic ARN used for monitoring alerts (null if not created)"
+  value       = try(aws_sns_topic.alerts.arn, null)
 }
 
 output "alarm_name" {
@@ -19,6 +19,21 @@ output "prometheus_workspace_id" {
 }
 
 output "dashboard_name" {
-  description = "CloudWatch dashboard providing an overview of cluster health"
-  value       = aws_cloudwatch_dashboard.eks_overview.dashboard_name
+  description = "CloudWatch dashboard name providing an overview of cluster health (null if not created)"
+  value       = try(aws_cloudwatch_dashboard.eks_overview.dashboard_name, null)
+}
+
+output "alarm_arn" {
+  description = "ARN of the CloudWatch alarm for EKS errors (null if not created)"
+  value       = try(aws_cloudwatch_metric_alarm.eks_errors[0].arn, null)
+}
+
+output "prometheus_workspace_alias" {
+  description = "Alias of the Prometheus workspace (null if not created)"
+  value       = try(aws_prometheus_workspace.this[0].alias, null)
+}
+
+output "sns_topic_name" {
+  description = "SNS topic name used for alerts (null if not created)"
+  value       = try(aws_sns_topic.alerts.name, null)
 }
