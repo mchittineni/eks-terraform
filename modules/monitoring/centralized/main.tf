@@ -90,13 +90,13 @@ resource "aws_ssm_parameter" "source_catalog" {
 
 # ==================== Prometheus workspace ====================
 resource "aws_prometheus_workspace" "central" {
-  alias = substr(replace("${random_id.suffix.hex}", "_", "-"), 0, 100)
+  alias = substr(replace("${var.environment}-central-${random_id.suffix.hex}", "_", "-"), 0, 100)
   tags  = local.tags
 }
 
 # ==================== Grafana workspace ====================
 resource "aws_grafana_workspace" "central" {
-  name                      = random_id.suffix.hex
+  name                      = "grafana-${var.environment}-${random_id.suffix.hex}"
   account_access_type       = "CURRENT_ACCOUNT"
   authentication_providers  = ["SAML"]
   data_sources              = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
