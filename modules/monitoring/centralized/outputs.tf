@@ -20,12 +20,12 @@ output "prometheus_workspace_id" {
 
 output "kibana_url" {
   description = "Dashboard endpoint for OpenSearch (Kibana-compatible) if OpenSearch is enabled."
-  value       = try(aws_opensearch_domain.logs.dashboard_endpoint, null)
+  value       = try(aws_opensearch_domain.logs[0].dashboard_endpoint, null)
 }
 
 output "opensearch_domain_arn" {
   description = "ARN of the OpenSearch domain (if created)."
-  value       = try(aws_opensearch_domain.logs.arn, null)
+  value       = try(aws_opensearch_domain.logs[0].arn, null)
 }
 
 output "sns_topic_arn" {
@@ -47,4 +47,3 @@ output "configuration_parameter_arn" {
   description = "SSM parameter ARN for the source catalog (if created)."
   value       = try(aws_ssm_parameter.source_catalog.arn, null)
 }
-

@@ -108,8 +108,8 @@ module "aws_monitoring" {
 module "centralized_monitoring" {
   source = "./modules/monitoring/centralized"
   // AWS outputs are accessed with and set to null if disabled
-  aws_cloudwatch_log_group = var.enable_aws ? module.aws_monitoring.log_group_name : null
-  grafana_admin_password   = var.grafana_admin_password
-  prometheus_retention     = var.prometheus_retention_days
-  environment              = var.environment
+  aws_cloudwatch_log_group    = var.enable_aws ? module.aws_monitoring.log_group_name : null
+  grafana_admin_password      = var.grafana_admin_password
+  prometheus_retention        = var.prometheus_retention_days
+  environment                 = var.environment
 }

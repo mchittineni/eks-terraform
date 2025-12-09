@@ -17,23 +17,11 @@ variable "aws_cloudwatch_log_group" {
   default     = ""
 }
 
-variable "grafana_workspace_name" {
-  description = "Name for the AWS Managed Grafana workspace to create or reference."
-  type        = string
-  default     = "${var.name_prefix}-grafana"
-}
-
 variable "grafana_admin_password" {
   description = "Admin password used for the Grafana deployment (sensitive)."
   type        = string
   sensitive   = true
   default     = ""
-}
-
-variable "prometheus_workspace_alias" {
-  description = "Friendly alias for the Amazon Managed Prometheus workspace."
-  type        = string
-  default     = "${var.name_prefix}-prometheus"
 }
 
 variable "prometheus_retention" {

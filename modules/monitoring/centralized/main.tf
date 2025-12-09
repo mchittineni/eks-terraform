@@ -90,13 +90,13 @@ resource "aws_ssm_parameter" "source_catalog" {
 
 # ==================== Prometheus workspace ====================
 resource "aws_prometheus_workspace" "central" {
-  alias = substr(replace("${var.prometheus_workspace_alias}-${random_id.suffix.hex}", "_", "-"), 0, 100)
+  alias = substr(replace("${random_id.suffix.hex}", "_", "-"), 0, 100)
   tags  = local.tags
 }
 
 # ==================== Grafana workspace ====================
 resource "aws_grafana_workspace" "central" {
-  name                      = "${var.grafana_workspace_name}-${random_id.suffix.hex}"
+  name                      = "${random_id.suffix.hex}"
   account_access_type       = "CURRENT_ACCOUNT"
   authentication_providers  = ["SAML"]
   data_sources              = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
@@ -186,7 +186,7 @@ resource "aws_cloudwatch_dashboard" "central" {
           ],
           "title" : "Prometheus Rule Evaluations",
           "stat" : "Sum",
-          "region" : data.aws_region.current.name,
+          "region" : data.aws_region.current.id, 
           "period" : 300,
           "yAxis" : {
             "left" : {
@@ -198,5 +198,3 @@ resource "aws_cloudwatch_dashboard" "central" {
     ]
   })
 }
-
-

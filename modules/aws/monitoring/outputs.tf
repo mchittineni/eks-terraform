@@ -35,5 +35,5 @@ output "prometheus_workspace_alias" {
 
 output "sns_topic_name" {
   description = "SNS topic name used for alerts (null if not created)"
-  value       = try(aws_sns_topic.alerts[0].name, null)
+  value       = try(aws_sns_topic.alerts.name, null) 
 }
