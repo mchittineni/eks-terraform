@@ -13,7 +13,7 @@ data "aws_region" "current" {}
 # ==================== CloudWatch Log group ====================
 resource "aws_cloudwatch_log_group" "eks" {
   count             = var.enable_cloudwatch_logs ? 1 : 0
-  name              = "/aws/eks/${var.cluster_name}/cluster"
+  name              = "/aws/eks/${var.cluster_name}/cluster-logs"
   retention_in_days = 30
   tags              = local.merged_tags
 }
@@ -35,7 +35,7 @@ resource "aws_sns_topic_subscription" "email" {
 resource "aws_cloudwatch_log_metric_filter" "eks_errors" {
   count          = var.enable_cloudwatch_logs ? 1 : 0
   name           = "${var.cluster_name}-error-count"
-  log_group_name = aws_cloudwatch_log_group.eks[0].name 
+  log_group_name = aws_cloudwatch_log_group.eks[0].name
   pattern        = "\"ERROR\""
 
   metric_transformation {
@@ -102,7 +102,7 @@ resource "aws_cloudwatch_dashboard" "eks_overview" {
           ]
           period = 300
           stat   = "Average"
-          region = data.aws_region.current.id 
+          region = data.aws_region.current.id
           title  = "EKS Cluster Node Count"
           yAxis = {
             left = {

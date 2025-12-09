@@ -15,7 +15,7 @@ data "aws_vpc" "selected" {
 # ==================== Random Password ====================
 resource "random_password" "master" {
   length           = 20
-  override_special = "!@#%^*-_=+"
+  override_special = "!#%^*-_=+"
   special          = true
   min_upper        = 2
   min_lower        = 4
@@ -165,7 +165,7 @@ resource "aws_db_instance" "this" {
 
 # ==================== RDS Database Secrets ====================
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name        = "${var.db_name}-${var.environment}-db-credentials"
+  name        = "${var.db_name}-${var.environment}-db-credentials-secret"
   description = "Database credentials for ${var.db_name} in ${var.environment} environment"
   tags        = local.merged_tags
 }

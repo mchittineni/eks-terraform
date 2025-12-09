@@ -63,7 +63,7 @@ resource "aws_iam_role_policy" "grafana_prometheus" {
 
 # ==================== Grafana Admin Secrets ====================
 resource "aws_secretsmanager_secret" "grafana_admin" {
-  name        = "central-grafana-${var.environment}"
+  name        = "central-grafana-${var.environment}-admin-credentials"
   tags        = local.tags
   description = "Credentials for the central Grafana admin user"
 }
@@ -96,7 +96,7 @@ resource "aws_prometheus_workspace" "central" {
 
 # ==================== Grafana workspace ====================
 resource "aws_grafana_workspace" "central" {
-  name                      = "${random_id.suffix.hex}"
+  name                      = random_id.suffix.hex
   account_access_type       = "CURRENT_ACCOUNT"
   authentication_providers  = ["SAML"]
   data_sources              = ["CLOUDWATCH", "PROMETHEUS", "XRAY"]
@@ -108,8 +108,8 @@ resource "aws_grafana_workspace" "central" {
 
 # ==================== OpenSearch workspace ====================
 resource "aws_opensearch_domain" "logs" {
-  count       = var.opensearch_enabled ? 1 : 0
-  domain_name = substr(replace("logs-${var.environment}-${random_id.suffix.hex}", "_", "-"), 0, 28)
+  count          = var.opensearch_enabled ? 1 : 0
+  domain_name    = substr(replace("logs-${var.environment}-${random_id.suffix.hex}", "_", "-"), 0, 28)
   engine_version = "OpenSearch_2.13"
   auto_tune_options {
     desired_state = "DISABLED"
@@ -150,9 +150,9 @@ resource "aws_opensearch_domain" "logs" {
 
 # ==================== Alerting (SNS) ====================
 resource "aws_sns_topic" "central_alerts" {
-  name = "central-monitoring-${var.environment}"
+  name         = "central-monitoring-${var.environment}"
   display_name = "Central Monitoring Alerts - ${var.environment}"
-  tags = local.tags
+  tags         = local.tags
 }
 
 # ==================== CloudWatch Events ====================
@@ -186,7 +186,7 @@ resource "aws_cloudwatch_dashboard" "central" {
           ],
           "title" : "Prometheus Rule Evaluations",
           "stat" : "Sum",
-          "region" : data.aws_region.current.id, 
+          "region" : data.aws_region.current.id,
           "period" : 300,
           "yAxis" : {
             "left" : {
