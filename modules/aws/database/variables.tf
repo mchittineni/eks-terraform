@@ -56,3 +56,10 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "db_password" {
+  description = "Optional explicit DB password (overrides generated password)"
+  type        = string
+  sensitive   = true
+  default     = null
+}

@@ -29,3 +29,18 @@ output "db_subnet_group_name" {
   description = "Name of the DB subnet group"
   value       = aws_db_subnet_group.this.name
 }
+
+output "db_security_group_id" {
+  description = "Security group protecting the RDS instance"
+  value       = aws_security_group.db.id
+}
+
+output "rds_monitoring_role_arn" {
+  description = "ARN of the IAM role used for RDS enhanced monitoring"
+  value       = aws_iam_role.rds_monitoring.arn
+}
+
+output "s3_backup_bucket_arn" {
+  description = "ARN of the S3 bucket for backups"
+  value       = aws_s3_bucket.backups.arn
+}
