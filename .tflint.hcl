@@ -1,5 +1,5 @@
 tflint {
-  required_version = ">= 0.52.0"
+  required_version = ">= 0.55.0"
 }
 
 config {
@@ -22,7 +22,7 @@ config {
 # AWS Plugin with latest rules
 plugin "aws" {
   enabled = true
-  version = "0.31.0"
+  version = "0.38.0"
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 

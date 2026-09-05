@@ -1,20 +1,20 @@
 // ==================== Terraform Configuration ====================
 // Defines the required Terraform version, providers, and the remote S3 state backend.
 terraform {
-  required_version = ">= 1.13.0"
+  required_version = ">= 1.16.1"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0"
+      version = "~> 6.62.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.9.0"
     }
     tls = {
       source  = "hashicorp/tls"
-      version = "~> 4.0"
+      version = "~> 4.3.0"
     }
   }
 
