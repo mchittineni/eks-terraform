@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="660" viewBox="0 0 940 660" role="img" aria-label="AWS EKS Architecture - dev">
+  <title>AWS EKS Architecture - dev</title>
+  
+  
+  <style>
+    .diagram-node { cursor: pointer; transition: opacity 0.25s ease; }
+    .diagram-node .node-card { transition: stroke 0.2s ease, stroke-width 0.2s ease; }
+    .diagram-node:hover .node-card { stroke: #38bdf8; stroke-width: 2.5px; }
+    .diagram-edge { transition: opacity 0.25s ease; }
+    .diagram-edge .edge-path { transition: stroke 0.2s ease, stroke-width 0.2s ease; }
+    .diagram-edge .edge-flow {
+      stroke-dasharray: 4 14;
+      animation: tfarch-flow 1.6s linear infinite;
+      pointer-events: none;
+    }
+    .diagram-edge:hover .edge-path,
+    .diagram-edge.active .edge-path { stroke: #38bdf8; stroke-width: 2.4px; }
+    .diagram-edge:hover .edge-flow,
+    .diagram-edge.active .edge-flow { stroke: #7dd3fc; stroke-opacity: 0.9; animation-duration: 0.8s; }
+    .diagram-node.dim, .diagram-edge.dim { opacity: 0.12; }
+    @keyframes tfarch-flow { to { stroke-dashoffset: -18; } }
+    @media (prefers-reduced-motion: reduce) {
+      .diagram-edge .edge-flow { animation: none; }
+    }
+  </style>
+
+  <defs>
+    <filter id="node-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="node-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#38bdf8" flood-opacity="0.6"/>
+    </filter>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8" />
+    </marker>
+  </defs>
+
+  <rect width="940" height="660" fill="#0b1120"/>
+  <text x="40" y="36" fill="#f8fafc" font-size="18" font-weight="800" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">AWS EKS Architecture - dev</text>
+  <g transform="translate(0, 26)">
+    <g class="containers-layer">
+    <g class="container-subnet" data-id="aws_subnet.eks_private_1">
+      <rect x="100" y="136" width="212" height="120" rx="6"
+        fill="rgba(255, 255, 255, 0.02)" stroke="rgba(148, 163, 184, 0.3)" stroke-width="1.5" />
+      <text x="110" y="152" fill="#94a3b8" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">
+        private · Subnet: eks_private_1
+      </text>
+      <text x="110" y="166" fill="#64748b" font-size="9" font-family="'JetBrains Mono', ui-monospace, monospace">172.20.1.0/24</text>
+    </g>
+  
+    <g class="container-zone" data-id="zone-aws-aws_vpc.eks_vpc-us-west-2a">
+      <rect x="84" y="106" width="244" height="182" rx="8"
+        fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="4 2" />
+      <text x="96" y="124" fill="#94a3b8" font-size="10" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">
+        Availability Zone: us-west-2a
+      </text>
+    </g>
+  
+    <g class="container-network" data-id="aws_vpc.eks_vpc">
+      <rect x="60" y="60" width="480" height="256" rx="12"
+        fill="rgba(255, 153, 0, 0.04)" stroke="#10b981" stroke-width="2" stroke-dasharray="6 3" />
+      <rect x="60" y="60" width="480" height="32" rx="12" fill="rgba(255, 153, 0, 0.15)" />
+      <text x="76" y="80" fill="#e2e8f0" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">
+        VPC: eks_vpc<tspan fill="#94a3b8" font-weight="400"> (172.20.0.0/16)</tspan>
+      </text>
+    </g>
+  </g>
+    <g class="edges-layer">
+      <g class="diagram-edge" data-source="aws_eks_cluster.prod_cluster" data-target="aws_eks_node_group.managed_workers">
+        <path class="edge-hit" d="M 150 406 C 205 406, 315 406, 370 406" fill="none" stroke="transparent" stroke-width="14"/>
+        <path class="edge-path" d="M 150 406 C 205 406, 315 406, 370 406" fill="none" stroke="rgba(148, 163, 184, 0.35)" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+        <path class="edge-flow" d="M 150 406 C 205 406, 315 406, 370 406" fill="none" stroke="#94a3b8" stroke-opacity="0.45" stroke-width="2.2" stroke-linecap="round"/>
+        
+          <rect x="234.4" y="397" width="51.199999999999996" height="18" rx="4" fill="rgba(15, 23, 42, 0.88)" stroke="rgba(255,255,255,0.1)"/>
+          <text x="260" y="409" text-anchor="middle" fill="#cbd5e1" font-size="9" font-family="'JetBrains Mono', ui-monospace, monospace">Managed</text>
+        
+      </g>
+    </g>
+    <g class="nodes-layer">
+      <g class="diagram-node"
+         data-id="aws_eks_cluster.prod_cluster"
+         transform="translate(60, 366)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>prod_cluster — aws_eks_cluster (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-eks-linearGradient-1"><stop stop-color="#C8511B" offset="0%"></stop><stop stop-color="#FF9900" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-eks-Icon-Architecture/64/Arch_Amazon-Elastic-Container-Kubernetes_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-eks-Icon-Architecture-BG/64/Containers" fill="url(#tfarch-aws-eks-linearGradient-1)"><rect id="tfarch-aws-eks-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M46.842,32.1990168 L40.013,40.1200132 L47.441,48.7840092 L44.669,48.7840092 L38,41.0000169 L38,49.0000169 L36,49.0000169 L36,32.0000169 L38,32.0000169 L38,39.0000169 L44.181,32.1990168 L46.842,32.1990168 Z M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" id="tfarch-aws-eks-Amazon-Elastic-Container-Kubernetes_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">prod_cluster</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">eks_cluster</text>
+          <text y="30" fill="#ED7100" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Amazon EKS</text>
+        </g>
+      </g>
+    
+      <g class="diagram-node"
+         data-id="aws_eks_node_group.managed_workers"
+         transform="translate(280, 366)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>managed_workers — aws_eks_node_group (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-eks-linearGradient-1"><stop stop-color="#C8511B" offset="0%"></stop><stop stop-color="#FF9900" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-eks-Icon-Architecture/64/Arch_Amazon-Elastic-Container-Kubernetes_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-eks-Icon-Architecture-BG/64/Containers" fill="url(#tfarch-aws-eks-linearGradient-1)"><rect id="tfarch-aws-eks-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M46.842,32.1990168 L40.013,40.1200132 L47.441,48.7840092 L44.669,48.7840092 L38,41.0000169 L38,49.0000169 L36,49.0000169 L36,32.0000169 L38,32.0000169 L38,39.0000169 L44.181,32.1990168 L46.842,32.1990168 Z M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" id="tfarch-aws-eks-Amazon-Elastic-Container-Kubernetes_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">managed_worke…</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">eks_node_group</text>
+          <text y="30" fill="#ED7100" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Amazon EKS</text>
+        </g>
+      </g>
+    
+      <g class="diagram-node"
+         data-id="aws_ecr_repository.app_repo"
+         transform="translate(500, 366)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>app_repo — aws_ecr_repository (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-ecs-linearGradient-1"><stop stop-color="#C8511B" offset="0%"></stop><stop stop-color="#FF9900" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-ecs-Icon-Architecture/64/Arch_Amazon-Elastic-Container-Service_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-ecs-Icon-Architecture-BG/64/Containers" fill="url(#tfarch-aws-ecs-linearGradient-1)"><rect id="tfarch-aws-ecs-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M64,48.2340095 L56,43.4330117 L56,32.0000169 C56,31.6440171 55.812,31.3150172 55.504,31.1360173 L44,24.4260204 L44,14.7520248 L64,26.5710194 L64,48.2340095 Z M65.509,25.13902 L43.509,12.139026 C43.199,11.9560261 42.818,11.9540261 42.504,12.131026 C42.193,12.3090259 42,12.6410257 42,13.0000256 L42,25.0000201 C42,25.3550199 42.189,25.6840198 42.496,25.8640197 L54,32.5740166 L54,44.0000114 C54,44.3510113 54.185,44.6770111 54.486,44.857011 L64.486,50.8570083 C64.644,50.9520082 64.822,51 65,51 C65.17,51 65.34,50.9570082 65.493,50.8700083 C65.807,50.6930084 66,50.3600085 66,50 L66,26.0000196 C66,25.6460198 65.814,25.31902 65.509,25.13902 L65.509,25.13902 Z M40.445,66.863001 L17,54.3990067 L17,26.5710194 L37,14.7520248 L37,24.4510204 L26.463,31.1560173 C26.175,31.3400172 26,31.6580171 26,32.0000169 L26,49.0000091 C26,49.373009 26.208,49.7150088 26.538,49.8870087 L39.991,56.8870055 C40.28,57.0370055 40.624,57.0380055 40.912,56.8880055 L53.964,50.1440086 L61.996,54.9640064 L40.445,66.863001 Z M64.515,54.1420068 L54.515,48.1420095 C54.217,47.9640096 53.849,47.9520096 53.541,48.1120095 L40.455,54.8730065 L28,48.3930094 L28,32.5490167 L38.537,25.8440197 C38.825,25.6600198 39,25.3420199 39,25.0000201 L39,13.0000256 C39,12.6410257 38.808,12.3090259 38.496,12.131026 C38.184,11.9540261 37.802,11.9560261 37.491,12.139026 L15.491,25.13902 C15.187,25.31902 15,25.6460198 15,26.0000196 L15,55 C15,55.3690062 15.204,55.7090061 15.53,55.883006 L39.984,68.8830001 C40.131,68.961 40.292,69 40.453,69 C40.62,69 40.786,68.958 40.937,68.8750001 L64.484,55.875006 C64.797,55.7020061 64.993,55.3750062 65.0001416,55.0180064 C65.006,54.6600066 64.821,54.3260067 64.515,54.1420068 L64.515,54.1420068 Z" id="tfarch-aws-ecs-Amazon-Elastic-Container-Service_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">app_repo</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">ecr_repository</text>
+          <text y="30" fill="#ED7100" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Amazon ECS</text>
+        </g>
+      </g>
+    
+      <g class="diagram-node"
+         data-id="aws_secretsmanager_secret.db_credentials"
+         transform="translate(720, 366)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>db_credentials — aws_secretsmanager_secret (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-secretsmanager-linearGradient-1"><stop stop-color="#BD0816" offset="0%"></stop><stop stop-color="#FF5252" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-secretsmanager-Icon-Architecture/64/Arch_AWS-Secrets-Manager_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-secretsmanager-Icon-Architecture-BG/64/Security-Identity-Compliance" fill="url(#tfarch-aws-secretsmanager-linearGradient-1)"><rect id="tfarch-aws-secretsmanager-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M38.76,43.36 C38.76,44.044 39.317,44.6 40,44.6 C40.684,44.6 41.24,44.044 41.24,43.36 C41.24,42.676 40.684,42.12 40,42.12 C39.317,42.12 38.76,42.676 38.76,43.36 L38.76,43.36 Z M36.76,43.36 C36.76,41.573 38.213,40.12 40,40.12 C41.787,40.12 43.24,41.573 43.24,43.36 C43.24,44.796 42.296,46.002 41,46.426 L41,49 L39,49 L39,46.426 C37.704,46.002 36.76,44.796 36.76,43.36 L36.76,43.36 Z M49,38 L31,38 L31,51 L49,51 L49,48 L46,48 L46,46 L49,46 L49,43 L46,43 L46,41 L49,41 L49,38 Z M34,36 L45.999,36 L46,31 C46.001,28.384 43.143,26.002 40.004,26 L40.001,26 C38.472,26 36.928,26.574 35.763,27.575 C34.643,28.537 34,29.786 34,31.001 L34,36 Z M48,31.001 L47.999,36 L50,36 C50.553,36 51,36.448 51,37 L51,52 C51,52.552 50.553,53 50,53 L30,53 C29.447,53 29,52.552 29,52 L29,37 C29,36.448 29.447,36 30,36 L32,36 L32,31 C32.001,29.202 32.897,27.401 34.459,26.058 C35.982,24.75 38.001,24 40.001,24 L40.004,24 C44.265,24.002 48.001,27.273 48,31.001 L48,31.001 Z M19.207,55.049 L20.828,53.877 C18.093,50.097 16.581,45.662 16.396,41 L19,41 L19,39 L16.399,39 C16.598,34.366 18.108,29.957 20.828,26.198 L19.207,25.025 C16.239,29.128 14.599,33.942 14.399,39 L12,39 L12,41 L14.396,41 C14.582,46.086 16.224,50.926 19.207,55.049 L19.207,55.049 Z M53.838,59.208 C50.069,61.936 45.648,63.446 41,63.639 L41,61 L39,61 L39,63.639 C34.352,63.447 29.93,61.937 26.159,59.208 L24.988,60.828 C29.1,63.805 33.928,65.445 39,65.639 L39,68 L41,68 L41,65.639 C46.072,65.445 50.898,63.805 55.01,60.828 L53.838,59.208 Z M26.159,20.866 C29.93,18.138 34.352,16.628 39,16.436 L39,19 L41,19 L41,16.436 C45.648,16.628 50.069,18.138 53.838,20.866 L55.01,19.246 C50.898,16.27 46.072,14.63 41,14.436 L41,12 L39,12 L39,14.436 C33.928,14.629 29.1,16.269 24.988,19.246 L26.159,20.866 Z M65.599,39 C65.399,33.942 63.759,29.128 60.79,25.025 L59.169,26.198 C61.89,29.957 63.4,34.366 63.599,39 L61,39 L61,41 L63.602,41 C63.416,45.662 61.905,50.097 59.169,53.877 L60.79,55.049 C63.774,50.926 65.415,46.086 65.602,41 L68,41 L68,39 L65.599,39 Z M56.386,25.064 L64.226,17.224 L62.812,15.81 L54.972,23.65 L56.386,25.064 Z M23.612,55.01 L15.772,62.85 L17.186,64.264 L25.026,56.424 L23.612,55.01 Z M28.666,27.253 L13.825,12.413 L12.411,13.827 L27.252,28.667 L28.666,27.253 Z M54.193,52.78 L67.586,66.173 L66.172,67.587 L52.779,54.194 L54.193,52.78 Z" id="tfarch-aws-secretsmanager-AWS-Secrets-Manager_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">db_credentials</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">secretsmanager_…</text>
+          <text y="30" fill="#DD344C" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">AWS Secrets Manag…</text>
+        </g>
+      </g>
+    
+      <g class="diagram-node"
+         data-id="aws_kms_key.cmk"
+         transform="translate(60, 470)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>cmk — aws_kms_key (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-kms-linearGradient-1"><stop stop-color="#BD0816" offset="0%"></stop><stop stop-color="#FF5252" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-kms-Icon-Architecture/64/Arch_AWS-Key-Management-Services_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-kms-Icon-Architecture-BG/64/Security-Identity-Compliance" fill="url(#tfarch-aws-kms-linearGradient-1)"><rect id="tfarch-aws-kms-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M51.9968943,52.4963312 L58.9968943,52.4963312 L58.9968943,50.4963312 L51.9968943,50.4963312 L51.9968943,52.4963312 Z M42.9968943,52.4963312 L49.9968943,52.4963312 L49.9968943,50.4963312 L42.9968943,50.4963312 L42.9968943,52.4963312 Z M33.9968943,52.4963312 L40.9968943,52.4963312 L40.9968943,50.4963312 L33.9968943,50.4963312 L33.9968943,52.4963312 Z M44.9968943,44.4963312 C44.9968943,43.3933312 45.8948943,42.4963312 46.9968943,42.4963312 C48.0998943,42.4963312 48.9968943,43.3933312 48.9968943,44.4963312 C48.9968943,45.5993312 48.0998943,46.4963312 46.9968943,46.4963312 C45.8948943,46.4963312 44.9968943,45.5993312 44.9968943,44.4963312 L44.9968943,44.4963312 Z M50.9968943,44.4963312 C50.9968943,42.2903312 49.2038943,40.4963312 46.9968943,40.4963312 C44.7908943,40.4963312 42.9968943,42.2903312 42.9968943,44.4963312 C42.9968943,46.7023312 44.7908943,48.4963312 46.9968943,48.4963312 C49.2038943,48.4963312 50.9968943,46.7023312 50.9968943,44.4963312 L50.9968943,44.4963312 Z M36.9968943,42.4963312 C38.0998943,42.4963312 38.9968943,43.3933312 38.9968943,44.4963312 C38.9968943,45.5993312 38.0998943,46.4963312 36.9968943,46.4963312 C35.8948943,46.4963312 34.9968943,45.5993312 34.9968943,44.4963312 C34.9968943,43.3933312 35.8948943,42.4963312 36.9968943,42.4963312 L36.9968943,42.4963312 Z M36.9968943,48.4963312 C39.2038943,48.4963312 40.9968943,46.7023312 40.9968943,44.4963312 C40.9968943,42.2903312 39.2038943,40.4963312 36.9968943,40.4963312 C34.7908943,40.4963312 32.9968943,42.2903312 32.9968943,44.4963312 C32.9968943,46.7023312 34.7908943,48.4963312 36.9968943,48.4963312 L36.9968943,48.4963312 Z M65.9968943,33.4963312 L65.9968943,56.4963312 C65.9968943,57.0483312 65.5498943,57.4963312 64.9968943,57.4963312 L33.9968943,57.4963312 L33.9968943,55.4963312 L63.9968943,55.4963312 L63.9968943,34.4963312 L41.9968943,34.4963312 L41.9968943,32.4963312 L64.9968943,32.4963312 C65.5498943,32.4963312 65.9968943,32.9443312 65.9968943,33.4963312 L65.9968943,33.4963312 Z M30.6958943,38.5433312 C30.2798943,38.6743312 29.9968943,39.0603312 29.9968943,39.4963312 L29.9968943,60.5363312 L27.5978943,62.5933312 L24.9968943,59.6203312 L24.9968943,56.9963312 C24.9968943,56.7313312 24.8918943,56.4763312 24.7038943,56.2893312 L22.4118943,53.9963312 L24.7038943,51.7033312 C24.8918943,51.5163312 24.9968943,51.2613312 24.9968943,50.9963312 L24.9968943,48.9963312 C24.9968943,48.7313312 24.8918943,48.4763312 24.7038943,48.2893312 L22.4118943,45.9963312 L24.7038943,43.7033312 C24.8918943,43.5163312 24.9968943,43.2613312 24.9968943,42.9963312 L24.9968943,39.5063312 C24.9968943,39.0703312 24.7148943,38.6843312 24.2988943,38.5533312 C19.1568943,36.9233312 16.1168943,31.6343312 17.2298943,26.2493312 C18.0318943,22.3693312 21.0158943,19.2583312 24.8308943,18.3233312 C28.0798943,17.5263312 31.4118943,18.2233312 33.9718943,20.2303312 C36.5298943,22.2373312 37.9968943,25.2503312 37.9968943,28.4963312 C37.9968943,33.0493312 34.9948943,37.1813312 30.6958943,38.5433312 L30.6958943,38.5433312 Z M39.9968943,28.4963312 C39.9968943,24.6323312 38.2508943,21.0453312 35.2058943,18.6563312 C32.1608943,16.2673312 28.2088943,15.4363312 24.3548943,16.3813312 C19.7938943,17.4983312 16.2288943,21.2133312 15.2708943,25.8443312 L15.2708943,25.8453312 C14.0008943,31.9903312 17.2998943,38.0343312 22.9968943,40.2153312 L22.9968943,42.5823312 L20.2898943,45.2893312 C19.8998943,45.6803312 19.8998943,46.3123312 20.2898943,46.7033312 L22.9968943,49.4103312 L22.9968943,50.5823312 L20.2898943,53.2893312 C19.8998943,53.6803312 19.8998943,54.3123312 20.2898943,54.7033312 L22.9968943,57.4103312 L22.9968943,59.9963312 C22.9968943,60.2383312 23.0848943,60.4723312 23.2448943,60.6553312 L26.7448943,64.6553312 C26.9428943,64.8803312 27.2188943,64.9963312 27.4968943,64.9963312 C27.7278943,64.9963312 27.9588943,64.9173312 28.1478943,64.7553312 L31.6478943,61.7553312 C31.8698943,61.5653312 31.9968943,61.2883312 31.9968943,60.9963312 L31.9968943,40.2043312 C36.7428943,38.3723312 39.9968943,33.6623312 39.9968943,28.4963312 L39.9968943,28.4963312 Z M27.4968943,30.8663312 C26.1188943,30.8663312 24.9968943,29.7453312 24.9968943,28.3663312 C24.9968943,26.9883312 26.1188943,25.8663312 27.4968943,25.8663312 C28.8758943,25.8663312 29.9968943,26.9883312 29.9968943,28.3663312 C29.9968943,29.7453312 28.8758943,30.8663312 27.4968943,30.8663312 L27.4968943,30.8663312 Z M27.4968943,23.8663312 C25.0158943,23.8663312 22.9968943,25.8853312 22.9968943,28.3663312 C22.9968943,30.8483312 25.0158943,32.8663312 27.4968943,32.8663312 C29.9788943,32.8663312 31.9968943,30.8483312 31.9968943,28.3663312 C31.9968943,25.8853312 29.9788943,23.8663312 27.4968943,23.8663312 L27.4968943,23.8663312 Z" id="tfarch-aws-kms-AWS-Key-Management-Services_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">cmk</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">kms_key</text>
+          <text y="30" fill="#DD344C" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">AWS KMS</text>
+        </g>
+      </g>
+    
+      <g class="diagram-node"
+         data-id="aws_iam_role.eks_oidc_role"
+         transform="translate(280, 470)"
+         opacity="1"
+         style="cursor: pointer;">
+        <title>eks_oidc_role — aws_iam_role (create)</title>
+        <rect class="node-card" width="180" height="80" rx="10"
+              fill="#111827"
+              stroke="rgba(16, 185, 129, 0.5)"
+              stroke-width="1.5"
+              filter="url(#node-shadow)"/>
+        <circle cx="166" cy="14" r="7" fill="#10b981" />
+        <text x="166" y="17.5" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">+</text>
+        
+        <g transform="translate(12, 23)"><svg viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="34" height="34"><defs><linearGradient x1="0%" y1="100%" x2="100%" y2="0%" id="tfarch-aws-iam-linearGradient-1"><stop stop-color="#BD0816" offset="0%"></stop><stop stop-color="#FF5252" offset="100%"></stop></linearGradient></defs><g id="tfarch-aws-iam-Icon-Architecture/64/Arch_AWS-Identity-and-Access-Management_64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="tfarch-aws-iam-Icon-Architecture-BG/64/Security-Identity-Compliance" fill="url(#tfarch-aws-iam-linearGradient-1)"><rect id="tfarch-aws-iam-Rectangle" x="0" y="0" width="80" height="80"></rect></g><path d="M14,59 L66,59 L66,21 L14,21 L14,59 Z M68,20 L68,60 C68,60.552 67.553,61 67,61 L13,61 C12.447,61 12,60.552 12,60 L12,20 C12,19.448 12.447,19 13,19 L67,19 C67.553,19 68,19.448 68,20 L68,20 Z M44,48 L59,48 L59,46 L44,46 L44,48 Z M57,42 L62,42 L62,40 L57,40 L57,42 Z M44,42 L52,42 L52,40 L44,40 L44,42 Z M29,46 C29,45.449 28.552,45 28,45 C27.448,45 27,45.449 27,46 C27,46.551 27.448,47 28,47 C28.552,47 29,46.551 29,46 L29,46 Z M31,46 C31,47.302 30.161,48.401 29,48.816 L29,51 L27,51 L27,48.815 C25.839,48.401 25,47.302 25,46 C25,44.346 26.346,43 28,43 C29.654,43 31,44.346 31,46 L31,46 Z M19,53.993 L36.994,54 L36.996,50 L33,50 L33,48 L36.996,48 L36.998,45 L33,45 L33,43 L36.999,43 L37,40.007 L19.006,40 L19,53.993 Z M22,38.001 L34,38.006 L34,31 C34.001,28.697 31.197,26.677 28,26.675 L27.996,26.675 C24.804,26.675 22.004,28.696 22.002,31 L22,38.001 Z M17,54.992 L17.006,39 C17.006,38.734 17.111,38.48 17.299,38.292 C17.486,38.105 17.741,38 18.006,38 L20,38.001 L20.002,31 C20.004,27.512 23.59,24.675 27.996,24.675 L28,24.675 C32.412,24.677 36.001,27.515 36,31 L36,38.007 L38,38.008 C38.553,38.008 39,38.456 39,39.008 L38.994,55 C38.994,55.266 38.889,55.52 38.701,55.708 C38.514,55.895 38.259,56 37.994,56 L18,55.992 C17.447,55.992 17,55.544 17,54.992 L17,54.992 Z M60,36 L62,36 L62,34 L60,34 L60,36 Z M44,36 L55,36 L55,34 L44,34 L44,36 Z" id="tfarch-aws-iam-AWS-Identity-and-Access-Management_Icon_64_Squid" fill="#FFFFFF"></path></g></svg></g>
+        <g transform="translate(56, 26)">
+          <text fill="#f8fafc" font-size="12" font-weight="700" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">eks_oidc_role</text>
+          <text y="16" fill="#94a3b8" font-size="9.5" font-family="'JetBrains Mono', ui-monospace, monospace">iam_role</text>
+          <text y="30" fill="#DD344C" font-size="8.5" font-weight="600" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">AWS IAM</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g class="legend">
+      <circle cx="46" cy="626" r="5" fill="#10b981"/>
+      <text x="58" y="630" fill="#94a3b8" font-size="11" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Create (+)</text>
+    
+      <circle cx="176" cy="626" r="5" fill="#f59e0b"/>
+      <text x="188" y="630" fill="#94a3b8" font-size="11" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Modify (~)</text>
+    
+      <circle cx="306" cy="626" r="5" fill="#ef4444"/>
+      <text x="318" y="630" fill="#94a3b8" font-size="11" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Destroy (-)</text>
+    
+      <circle cx="436" cy="626" r="5" fill="#64748b"/>
+      <text x="448" y="630" fill="#94a3b8" font-size="11" font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif">Unchanged</text>
+    </g>
+</svg>
