@@ -60,7 +60,7 @@ resource "aws_security_group" "db" {
 
 resource "aws_db_parameter_group" "postgres" {
   name        = "${var.db_name}-${var.environment}-pg"
-  family      = "postgres14"
+  family      = "postgres16"
   description = "Custom parameter group enforcing SSL"
 
   parameter {
@@ -135,7 +135,7 @@ resource "aws_db_instance" "this" {
   allocated_storage                   = var.allocated_storage
   max_allocated_storage               = var.allocated_storage + 100
   engine                              = "postgres"
-  engine_version                      = "14"
+  engine_version                      = "16"
   instance_class                      = var.instance_class
   db_subnet_group_name                = aws_db_subnet_group.this.name
   vpc_security_group_ids              = [aws_security_group.db.id]
