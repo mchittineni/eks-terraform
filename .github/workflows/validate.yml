@@ -60,11 +60,8 @@ jobs:
         continue-on-error: true
         uses: bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf #v12.1347.0
         with:
-          directory: .
-          framework: terraform
+          config_file: .checkov.yml
           soft_fail: true
-          output_format: cli,json
-          output_file_path: console,checkov-report.json
 
       - name: Upload Security & Lint Reports
         if: always()
@@ -73,5 +70,4 @@ jobs:
           name: security-and-quality-reports
           path: |
             tflint-report.json
-            checkov-report.json
           if-no-files-found: ignore
