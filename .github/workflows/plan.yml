@@ -1,0 +1,176 @@
+name: Terraform Plan & Architecture Diagram
+
+on:
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: Terraform Plan & Diagram
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Node.js (for Architecture Diagram Generator)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e #v4.0.1
+        with:
+          terraform_version: "1.16.1"
+
+      - name: Configure AWS Credentials
+        if: ${{ vars.AWS_DEPLOYMENT_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c #6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOYMENT_ARN }}
+          aws-region: ${{ vars.AWS_DEPLOYMENT_REGION || 'us-east-1' }}
+
+      - name: Fetch Secrets from AWS Secrets Manager
+        if: ${{ vars.SECRETS_ARN_TERRAFORM != '' }}
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 #v3.0.1
+        with:
+          secret-ids: |
+            ${{ vars.SECRETS_ARN_TERRAFORM }}
+          parse-json-secrets: true
+
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_environment=${{ github.event.inputs.environment || 'dev' }}" >> "$GITHUB_ENV"
+          if [ -n "${{ env.TERRAFORM_ALERT_EMAIL }}" ]; then
+            echo "TF_VAR_alert_email=${{ env.TERRAFORM_ALERT_EMAIL }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" ]; then
+            echo "TF_VAR_grafana_admin_password=${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ env.TERRAFORM_OWNER_EMAIL }}" ]; then
+            echo "TF_VAR_owner_email=${{ env.TERRAFORM_OWNER_EMAIL }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -out=tfplan
+          terraform show -no-color tfplan > tfplan.txt
+          terraform show -json tfplan > plan.json
+
+      - name: Generate Architecture Diagram (tf-arch-diagram-generator)
+        id: diagram
+        if: always() && steps.plan.outcome == 'success'
+        run: |
+          echo "Generating architecture diagram from plan.json using tf-arch-diagram-generator..."
+          npx -y tf-arch-diagram-generator render plan.json --out docs/architecture.svg --title "AWS EKS Architecture Plan (${{ github.event.inputs.environment || 'dev' }})"
+          npx -y tf-arch-diagram-generator inspect plan.json --json > plan-summary.json
+          echo "✓ Architecture diagram generated at docs/architecture.svg"
+
+      - name: Upload Terraform Plan & Diagram Artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: terraform-plan-and-diagram
+          path: |
+            tfplan
+            tfplan.txt
+            plan.json
+            docs/architecture.svg
+            plan-summary.json
+          if-no-files-found: ignore
+
+      - name: Update PR Comment with Plan & Diagram Details
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0
+        if: github.event_name == 'pull_request' && always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            let planText = 'Plan output unavailable';
+            if (fs.existsSync('tfplan.txt')) {
+              planText = fs.readFileSync('tfplan.txt', 'utf8');
+              if (planText.length > 60000) {
+                planText = planText.substring(0, 60000) + '\n... (plan truncated for PR comment size limits)';
+              }
+            }
+
+            let summarySection = '';
+            if (fs.existsSync('plan-summary.json')) {
+              try {
+                const summary = JSON.parse(fs.readFileSync('plan-summary.json', 'utf8'));
+                summarySection = `\n### 📊 Architecture & Resource Summary\n` +
+                  `- **Providers**: \`${(summary.providers || []).join(', ') || 'aws'}\`\n` +
+                  `- **Diagram Generated**: \`docs/architecture.svg\` *(saved to workflow artifacts)*\n` +
+                  `- **Generator**: [mchittineni/tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator)\n`;
+              } catch (e) {
+                // Non-fatal JSON parse error
+              }
+            }
+
+            const commentHeader = '### 🚀 Terraform Plan & Architecture Status';
+            const body = [
+              commentHeader,
+              '',
+              '| Step | Status |',
+              '| :--- | :--- |',
+              '| ⚙️ **Terraform Init** | `${{ steps.init.outcome }}` |',
+              '| 📖 **Terraform Plan** | `${{ steps.plan.outcome }}` |',
+              '| 🗺️ **Architecture Diagram** | `${{ steps.diagram.outcome }}` |',
+              summarySection,
+              '<details><summary>📖 Show Full Terraform Plan</summary>',
+              '',
+              '```terraform',
+              planText,
+              '```',
+              '',
+              '</details>',
+              '',
+              '*Pusher: @${{ github.actor }}, Action: `${{ github.event_name }}`, Workflow: `${{ github.workflow }}`*'
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c => c.body && c.body.includes(commentHeader));
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body,
+              });
+            }

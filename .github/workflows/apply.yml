@@ -1,0 +1,106 @@
+name: Terraform Apply
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Node.js (for Architecture Diagram Generator)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e #v4.0.1
+        with:
+          terraform_version: "1.16.1"
+
+      - name: Configure AWS Credentials
+        if: ${{ vars.AWS_DEPLOYMENT_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c #6.2.4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOYMENT_ARN }}
+          aws-region: ${{ vars.AWS_DEPLOYMENT_REGION || 'us-east-1' }}
+
+      - name: Fetch Secrets from AWS Secrets Manager
+        if: ${{ vars.SECRETS_ARN_TERRAFORM != '' }}
+        uses: aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 #v3.0.1
+        with:
+          secret-ids: |
+            ${{ vars.SECRETS_ARN_TERRAFORM }}
+          parse-json-secrets: true
+
+      - name: Set Terraform Environment Variables
+        run: |
+          echo "TF_VAR_environment=${{ github.event.inputs.environment || 'dev' }}" >> "$GITHUB_ENV"
+          if [ -n "${{ env.TERRAFORM_ALERT_EMAIL }}" ]; then
+            echo "TF_VAR_alert_email=${{ env.TERRAFORM_ALERT_EMAIL }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" ]; then
+            echo "TF_VAR_grafana_admin_password=${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
+          fi
+          if [ -n "${{ env.TERRAFORM_OWNER_EMAIL }}" ]; then
+            echo "TF_VAR_owner_email=${{ env.TERRAFORM_OWNER_EMAIL }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve -input=false
+
+      - name: Export Post-Deployment State Plan for Diagram
+        id: post_plan
+        continue-on-error: true
+        run: |
+          terraform plan -detailed-exitcode -no-color -out=applied-plan || true
+          if [ -f applied-plan ]; then
+            terraform show -json applied-plan > applied-plan.json
+            npx -y tf-arch-diagram-generator render applied-plan.json --out docs/architecture.svg --title "Deployed AWS EKS Architecture (${{ github.event.inputs.environment || 'dev' }})"
+            npx -y tf-arch-diagram-generator inspect applied-plan.json --json > applied-summary.json
+          fi
+
+      - name: Capture Outputs
+        id: outputs
+        run: |
+          echo "eks_cluster_name=$(terraform output -raw eks_cluster_name 2>/dev/null || echo 'n/a')" >> $GITHUB_OUTPUT
+          echo "rds_endpoint=$(terraform output -raw rds_endpoint 2>/dev/null || echo 'n/a')" >> $GITHUB_OUTPUT
+
+      - name: Upload Deployed Diagram & Output Artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: applied-architecture-and-outputs
+          path: |
+            docs/architecture.svg
+            applied-plan.json
+            applied-summary.json
+          if-no-files-found: ignore
