@@ -144,7 +144,7 @@ variable "grafana_admin_password" {
   sensitive   = true
   validation {
     condition = (
-      // Skip password validation if monitoring is explicitly disabled
+      # Skip password validation if monitoring is explicitly disabled
       !var.enable_monitoring || (
         length(var.grafana_admin_password) >= 12 &&
         can(regex("[A-Z]", var.grafana_admin_password)) &&
