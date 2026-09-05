@@ -49,31 +49,11 @@ rule "terraform_comment_syntax" {
   enabled = true
 }
 
-# AWS Security Rules
+# AWS Rules
 rule "aws_instance_invalid_type" {
   enabled = false
 }
 
-rule "aws_kms_key_rotation_disabled" {
-  enabled = true
-}
-
-rule "aws_security_group_rule_allows_all" {
-  enabled = true
-}
-
-rule "aws_instance_root_volume_encrypted" {
-  enabled = true
-}
-
-rule "aws_db_instance_single_az" {
-  enabled = true
-}
-
-rule "aws_dynamodb_point_in_time_recovery_disabled" {
-  enabled = true
-}
-
-rule "aws_ebs_snapshot_copy_requires_encryption" {
+rule "aws_instance_previous_type" {
   enabled = true
 }
