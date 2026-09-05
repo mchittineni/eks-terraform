@@ -2,705 +2,110 @@
 
 ## Overview
 
-This guide explains how to set up and configure a CI/CD pipeline for automated infrastructure deployment using GitHub Actions. The pipeline automates Terraform validation, security scanning, planning, and deployment workflows.
+This repository uses automated GitHub Actions CI/CD workflows to test, validate, plan, deploy, and visually document AWS EKS infrastructure. The pipeline incorporates security scans, linting, OIDC-based AWS authentication, and automated cloud architecture diagram generation via [tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator).
 
 ## Pipeline Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Actions Workflow                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Trigger Events (Push, Pull Request, Manual)                │
-│         ↓                                                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Validate & Format Check                            │    │
-│  │  - terraform fmt                                    │    │
-│  │  - terraform validate                               │    │
-│  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Security Scanning                                  │    │
-│  │  - tfsec                                            │    │
-│  │  - checkov                                          │    │
-│  │  - tflint                                           │    │
-│  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Plan (PR) / Plan & Apply (Main)                    │    │
-│  │  - terraform plan                                   │    │
-│  │  - (Optional) Manual approval                       │    │
-│  │  - terraform apply                                  │    │
-│  └─────────────────────────────────────────────────────┘    │
-│         ↓                                                   │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  Post-Deployment                                    │    │
-│  │  - Output infrastructure details                    │    │
-│  │  - Verify deployment                                │    │
-│  │  - Notify team                                      │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       GitHub Actions Workflows                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Trigger Events (Push, Pull Request, Workflow Dispatch)                 │
+│         ↓                                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 1. Validate & Security Scan (.github/workflows/validate.yml)    │   │
+│  │ - terraform fmt -check -recursive                               │   │
+│  │ - terraform init -backend=false                                 │   │
+│  │ - terraform validate                                            │   │
+│  │ - tflint (AWS ruleset 0.38+)                                    │   │
+│  │ - Checkov Terraform security scan                               │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│         ↓                                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 2. Plan & Architecture Diagram (.github/workflows/plan.yml)     │   │
+│  │ - AWS OIDC Authentication                                       │   │
+│  │ - terraform plan -out=tfplan                                    │   │
+│  │ - terraform show -json tfplan > plan.json                       │   │
+│  │ - npx tf-arch-diagram-generator render plan.json -o arch.svg    │   │
+│  │ - Upload plan & SVG artifacts                                   │   │
+│  │ - Post PR comment with plan diff & diagram status               │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│         ↓ (Merge to main / Dispatch)                                    │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ 3. Apply Workflow (.github/workflows/apply.yml)                 │   │
+│  │ - terraform apply -auto-approve                                 │   │
+│  │ - Render applied architecture diagram                           │   │
+│  │ - Capture cluster & database outputs                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+│  Optional / Manual:                                                     │
+│  • diagram.yml  - On-demand architecture diagram generation & commit    │
+│  • destroy.yml  - Protected manual teardown workflow                    │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
 
 ## GitHub Actions Workflows
 
-### 1. Validation & Security Workflow
+### 1. Validate & Security Scan (`.github/workflows/validate.yml`)
+Runs on every push to `main`, on pull requests, and on manual dispatch. Validates syntax, checks formatting, and audits configuration against AWS security benchmarks.
+
+- **Action versions (Pinned by Full Commit SHA)**:
+  - `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1`
+  - `actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0` (Node 24)
+  - `hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e #v4.0.1` (Terraform v1.16.1)
+  - `terraform-linters/setup-tflint@1cf010d3c7aef302051ccdb68c14c5dc2efa34ef #v6.3.1`
+  - `bridgecrewio/checkov-action@99bb2caf247dfd9f03cf984373bc6043d4e32ebf #v12.1347.0`
+  - `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1`
+  - `aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c #6.2.4`
+  - `aws-actions/aws-secretsmanager-get-secrets@2cb1a461cbd4865ac4299648312e4704c646cd53 #v3.0.1`
+  - `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 #v9.0.0`
+
+### 2. Plan & Architecture Diagram (`.github/workflows/plan.yml`)
+Triggered on pull requests to `main`. Prepares the plan, inspects resources, renders the architecture diagram using `tf-arch-diagram-generator`, and publishes a sticky PR comment with full details.
+
+- **Key Steps**:
+  1. Configures AWS credentials via GitHub OIDC (`aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c #6.2.4`).
+  2. Sets up Node.js 24 (`actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0`).
+  3. Executes `terraform plan` and exports to JSON (`terraform show -json tfplan > plan.json`).
+  4. Renders SVG architecture diagram:
+     ```bash
+     npx -y tf-arch-diagram-generator render plan.json --out docs/architecture.svg --title "AWS EKS Architecture Plan"
+     npx -y tf-arch-diagram-generator inspect plan.json --json > plan-summary.json
+     ```
+  5. Uploads `tfplan`, `plan.json`, `docs/architecture.svg`, and `plan-summary.json` as job artifacts.
+  6. Updates or creates an informative PR comment with markdown status and expandable plan output.
+
+### 3. Deploy / Apply (`.github/workflows/apply.yml`)
+Runs automatically upon merging changes into `main` or via manual dispatch with environment selection (`dev`, `staging`, `production`).
+
+- Deploys infrastructure using `terraform apply -auto-approve`.
+- Exports state plan and refreshes `docs/architecture.svg`.
+- Publishes outputs (`eks_cluster_name`, `rds_endpoint`).
+
+### 4. Dedicated Diagram Generator (`.github/workflows/diagram.yml`)
+Manual workflow (`workflow_dispatch`) enabling on-demand plan generation, rendering via `tf-arch-diagram-generator`, and auto-committing the updated `docs/architecture.svg` back to the repository.
+
+### 5. Protected Destroy (`.github/workflows/destroy.yml`)
+Safely tears down infrastructure in non-production workspaces. Requires typing `DESTROY` in the confirmation input to prevent accidental resource deletion.
+
+---
+
+## Local Diagram Generation
+
+Developers can also generate diagrams directly on their local machines:
 
-**File**: `.github/workflows/validate.yml`
-
-```yaml
-name: Terraform Validate & Security Scan
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, closed]
-
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-jobs:
-  terraform-validate-security:
-    name: Terraform Validate & Security
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.13.0
-
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: latest
-
-      - name: Show Terraform version
-        run: terraform --version
-      
-      - name: Check Backend Initialization
-        id: backend_check
-        continue-on-error: true
-        run: |
-          if [ -d ".terraform" ]; then
-            echo "backend_initialized=true" >> $GITHUB_OUTPUT
-            echo "✓ Backend already initialized"
-          else
-            echo "backend_initialized=false" >> $GITHUB_OUTPUT
-            echo "⚠ Backend not initialized, will run init.sh"
-          fi
-      
-      - name: Run Init Script if Needed
-        if: steps.backend_check.outputs.backend_initialized == 'false'
-        run: |
-          chmod +x scripts/init.sh
-          bash scripts/init.sh
-      - name: Terraform Init
-        id: init
-        run: terraform init -input=false
-
-      - name: Terraform Format
-        id: fmt
-        run: terraform fmt -check -recursive
-
-      # - name: Terraform Validate
-      #   id: validate
-      #   run: terraform validate
-      #   uncomment the above step if you need the output in a colourful format
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-
-      - name: TFLint Setup
-        uses: terraform-linters/setup-tflint@v6
-        with:
-          tflint_version: latest
-
-      - name: Show TFLint version
-        run: tflint --version
-
-      - name: TFLint Init
-        run: tflint --init
-
-      - name: Run TFLint
-        continue-on-error: true
-        run: tflint --config=.tflint.hcl --format json . > tflint-report.json || true
-
-      - name: Run TFSec
-        continue-on-error: true
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          working_directory: .
-          config_file: .tfsec.yml
-
-      - name: Bridgecrew Checkov GitHub Action
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          directory: .
-          framework: terraform
-          quiet: false
-          soft_fail: false        
-
-      - name: Upload Reports to Artifacts
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: security-reports
-          path: |
-            tflint-report.json
-            checkov-report.json
-```
-
-### 2. Plan Workflow (Pull Requests)
-
-**File**: `.github/workflows/plan.yml`
-
-```yaml
-name: Terraform Plan
-
-on:
-    branches:
-        - main
-    pull_request:
-        types: [opened, synchronize, closed]
-
-jobs:
-  terraform-plan:
-    name: Terraform Plan
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      pull-requests: write
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
-    environment: ${{ github.environment }}
-    # Create a GitHub environment to deploy resources to
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOYMENT_ARN }}
-          aws-region: ${{ vars.AWS_DEPLOYMENT_REGION }}
-        # Update the role-to-assume and aws-region in respective GitHub environment secrets or variables
-
-      - name: Fetch AWS Secret from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
-        with:
-          secret-ids: |
-            ${{ vars.SECRETS_ARN_TERRAFORM }}
-          parse-json-secrets: true
-        #  updated the secret-ids either in respective github environment secrets or variables of your choice
-
-      - name: Set Terraform Environment Variables
-        run: |
-          echo "TF_VAR_alert_email=${{ env.TERRAFORM_ALERT_EMAIL }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_environment=${{ env.TERRAFORM_ENVIRONMENT }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_grafana_admin_password=${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_owner_email=${{ env.TERRAFORM_OWNER_EMAIL }}" >> "$GITHUB_ENV"
-        # store the TF_Var's as follows for loading the values into .tfvars file while running the plan
-
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: latest
-
-      - name: Show Terraform version
-        run: terraform --version
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -input=false
-
-      # - name: Terraform Plan
-      #   id: plan
-      #   continue-on-error: true
-      #   run: terraform plan
-      #   uncomment the above step if you need the output in a colourful format
-
-      - name: Terraform Plan
-        id: plan
-        run: |
-          terraform plan -no-color -out=tfplan
-          terraform show -no-color tfplan > tfplan.txt
-
-      - name: Update Terraform Plan Comment on a Pull Request
-        uses: actions/github-script@v8
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            // 1. Retrieve existing bot comments for the PR
-            const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-            })
-            const botComment = comments.find(comment => {
-                return comment.user.type === 'Bot' && comment.body.includes('Terraform Format and Style')
-            })
-            // 2. Prepare format of the comment
-            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-            <details><summary>Show Plan</summary>
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-            </details>
-            *Pusher: @${{ github.actor }},
-            Action: \`${{ github.event_name }}\`,
-            PR Number: \`${{ github.event.number }}\`,
-            Workflow: \`${{ github.workflow }}\`*`;
-            // 3. If we have a comment, update it, otherwise create a new one
-            if (botComment) {
-                github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: output
-                })
-            } else {
-                github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: output
-                })
-            }
-
-      - name: Upload Plan to Artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: tfplan
-          path: tfplan
-```
-
-### 3. Apply Workflow (Main Branch)
-
-**File**: `.github/workflows/apply.yml`
-
-```yaml
-name: Terraform Apply
-
-on:
-  push:
-    branches:
-        - main
-
-jobs:
-  terraform-apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      pull-requests: write
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
-    environment: {{ github.environment}}
-    # create a github environment to deploy the resources to
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOYMENT_ARN }}
-          aws-region: ${{ vars.AWS_DEPLOYMENT_REGION }}
-        #  updated the role-to-assume & aws-region either in respective github environment secrets or variables of your choice
-
-      - name: Fetch AWS Secret from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
-        with:
-          secret-ids: |
-            ${{ vars.SECRETS_ARN_TERRAFORM }}
-          parse-json-secrets: true
-        #  updated the secret-ids either in respective github environment secrets or variables of your choice
-
-      - name: Set Terraform Environment Variables
-        run: |
-          echo "TF_VAR_alert_email=${{ env.TERRAFORM_ALERT_EMAIL }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_environment=${{ env.TERRAFORM_ENVIRONMENT }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_grafana_admin_password=${{ env.TERRAFORM_GRAFANA_ADMIN_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "TF_VAR_owner_email=${{ env.TERRAFORM_OWNER_EMAIL }}" >> "$GITHUB_ENV"
-        # store the TF_Var's as follows to loading the .tfvars while running the plan
-
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: latest
-
-      - name: Show Terraform version
-        run: terraform --version
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -input=false
-
-      # - name: Terraform Plan
-      #   id: plan
-      #   continue-on-error: true
-      #   run: terraform plan
-      #   uncomment the above step if you need the output in a colourful format
-
-      - name: Terraform Plan
-        id: plan
-        run: |
-          terraform plan -no-color -out=tfplan
-          terraform show -no-color tfplan > tfplan.txt
-
-      - name: Terraform Apply
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
-
-      - name: Capture Outputs
-        id: outputs
-        run: |
-          echo "eks_cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
-          echo "rds_endpoint=$(terraform output -raw rds_endpoint)" >> $GITHUB_OUTPUT
-```
-
-### 4. Destroy Workflow (Manual)
-
-**File**: `.github/workflows/destroy.yml`
-
-```yaml
-name: Terraform Destroy (Manual)
-
-on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to destroy (dev/staging)'
-        required: true
-        default: 'dev'
-
-jobs:
-  terraform-destroy:
-    name: Terraform Destroy
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      pull-requests: write
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
-    environment: ${{ github.environment }}
-    # Create a GitHub environment to deploy resources to
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v5
-        with:
-          role-to-assume: ${{ vars.AWS_DEPLOYMENT_ARN }}
-          aws-region: ${{ vars.AWS_DEPLOYMENT_REGION }}
-        # Update the role-to-assume and aws-region in respective GitHub environment secrets or variables
-
-      - name: Fetch AWS Secret from AWS Secrets Manager
-        uses: aws-actions/aws-secretsmanager-get-secrets@v2
-        with:
-          secret-ids: |
-            ${{ vars.SECRETS_ARN_TERRAFORM }}
-          parse-json-secrets: true
-        #  updated the secret-ids either in respective github environment secrets or variables of your choice
-
-      - name: Terraform Setup
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: latest
-
-      - name: Show Terraform version
-        run: terraform --version
-
-      - name: Terraform Init
-        id: init
-        run: terraform init -input=false
-
-      - name: Confirm Destruction
-        run: |
-          echo "⚠️  WARNING: About to destroy infrastructure in ${{ github.event.inputs.environment }}"
-          echo "This action cannot be undone!"
-          sleep 5
-
-      - name: Terraform Destroy
-        run: |
-          terraform workspace select ${{ github.event.inputs.environment }}
-          terraform destroy -auto-approve
-```
-
-## GitHub Secrets Configuration
-
-Configure the following secrets in your GitHub repository settings (`Settings > Secrets and variables > Actions`):
-
-| Secret / Variable Name | Description | Example |
-|-------------|-------------|---------|
-| `AWS_DEPLOYMENT_ARN` | AWS OIDC IAM Role used for deployment |  |
-| `AWS_DEPLOYMENT_REGION` | AWS region for deployment | `us-east-1` |
-| `SECRETS_ARN_TERRAFORM` | AWS Secrets Manager ARN for storing sensitive variables required for deployment | (sensitive) |
-
-### Creating AWS OIDC IAM Role for CI/CD
-
-Follow the steps mentioned to configure GitHub OpenID Connect in Amazon Web Services [OIDC](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
-
-
-## Pipeline Execution
-
-### Automatic Triggers
-
-1. **Validation Workflow** - Runs on:
-   - Push to `main` or `develop` branches
-   - Pull requests to `main` branch
-   - Purpose: Validate code, run security scans
-
-2. **Plan Workflow** - Runs on:
-   - Pull requests to `main` branch
-   - Purpose: Show infrastructure changes before merge
-
-3. **Apply Workflow** - Runs on:
-   - Push to `main` branch (after PR merge)
-   - Purpose: Deploy approved infrastructure changes
-
-### Manual Triggers
-
-**Destroy Workflow**:
-```
-GitHub UI > Actions > Terraform Destroy (Manual) > Run workflow > Select environment
-```
-
-## Best Practices
-
-### 1. Branch Strategy
-
-```
-main (production)
-  ↑
-  └─ Pull Request
-       ↑
-       └─ feature/env-setup
-       └─ bugfix/networking
-       └─ develop (staging)
-```
-
-- **main**: Production-ready code, all workflows run
-- **develop**: Staging/testing, validation only
-- **feature/***: Feature branches, validation only
-
-### 2. Code Review Process
-
-1. Create feature branch from `develop`
-2. Make changes and commit
-3. Push to GitHub and create Pull Request
-4. Wait for validation workflow to pass
-5. Review plan output in PR comments
-6. Code review by team members
-7. Merge to `develop` for staging test
-8. Create PR to `main` for production
-9. Final approval and merge triggers apply workflow
-
-### 3. Environment Protection
-
-Enable branch protection rules on `main`:
-- Require pull request reviews (2+ reviewers)
-- Require status checks to pass
-- Require branches to be up to date
-- Include administrators in restrictions
-- Restrict who can push (admins only)
-
-### 4. Approval Gates
-
-Configure GitHub Environments for additional security:
-
-```yaml
-# Settings > Environments > production
-- Required reviewers (2+)
-- Required branch: main
-- Deployment branches: main only
-```
-
-### 5. Monitoring & Alerts
-
-Set up notifications for:
-- Failed validations
-- Deployment failures
-- Security scan findings
-- Manual approvals pending
-
-## Troubleshooting
-
-### Issue: Terraform Backend Lock
-
-**Symptoms**: Workflow fails with "Error acquiring state lock"
-
-**Solution**:
 ```bash
-# Manually unlock (use with caution)
-terraform force-unlock LOCK_ID
+# Generate architecture.svg from local plan
+./scripts/generate_diagram.sh dev
+
+# Generate diagram and launch interactive viewer in browser
+./scripts/generate_diagram.sh dev --serve
+
+# Render existing plan file
+./scripts/generate_diagram.sh --plan plan.json -o docs/architecture.svg
 ```
 
-### Issue: AWS Credentials Expired
-
-**Symptoms**: "UnrecognizedClientException" or authentication errors
-
-**Solution**:
-1. Rotate AWS access keys
-2. Update GitHub secrets with new credentials
-3. Re-run workflow
-
-### Issue: Plan Shows Unexpected Changes
-
-**Symptoms**: terraform plan detects changes that shouldn't exist
-
-**Solution**:
-```bash
-# Refresh state
-terraform refresh
-
-# Check for configuration drift
-terraform plan -no-color | grep -A5 "changes"
-```
-
-### Issue: Workspace Selection Error
-
-**Symptoms**: "No such workspace"
-
-**Solution**:
-```bash
-# Create workspace if it doesn't exist
-terraform workspace new staging
-terraform workspace select staging
-```
-
-## Advanced Configuration
-
-### Cost Estimation
-
-Integrate Infracost to estimate costs:
-
-```yaml
-- name: Install Infracost
-  run: |
-    curl https://raw.githubusercontent.com/infracosthq/infracost/master/scripts/install.sh | bash
-
-- name: Run Infracost
-  run: |
-    infracost breakdown --path . --format json > infracost.json
-    infracost comment github --path ./infracost.json \
-      --github-token ${{ github.token }}
-```
-
-### Policy as Code
-
-Enforce policies using OPA (Open Policy Agent):
-
-```yaml
-- name: OPA Policy Check
-  run: |
-    opa eval -d policies/ -b 'data.terraform.main' tfplan.json
-```
-
-### Automated Testing
-
-Run Terratest for module testing:
-
-```yaml
-- name: Run Terratest
-  run: |
-    cd tests/
-    go test -v -timeout 30m
-```
-
-## Security Considerations
-
-### 1. Secret Management
-
-- Never commit secrets to Git
-- Use GitHub Secrets for sensitive values
-- Rotate credentials regularly
-- Use short-lived credentials when possible
-
-### 2. State File Protection
-
-- Enable state file encryption (S3 + KMS)
-- Restrict access to S3 backend bucket
-- Enable versioning on backend bucket
-- Use DynamoDB for state locking
-
-### 3. Audit Logging
-
-- Enable GitHub Actions logs retention
-- Log all infrastructure changes
-- Use CloudTrail for AWS API audit
-- Review logs regularly
-
-### 4. Access Control
-
-- Limit who can approve deployments
-- Use GitHub team reviews
-- Enforce MFA for critical actions
-- Separate production and staging access
-
-## Integration Examples
-
-### Slack Notifications
-
-```yaml
-- name: Slack Notification
-  uses: 8398a7/action-slack@v3
-  with:
-    status: ${{ job.status }}
-    text: |
-      Terraform ${{ job.status }}
-      Author: ${{ github.actor }}
-      Branch: ${{ github.ref }}
-    webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-    fields: repo,message,commit,author
-```
-
-### Email Notifications
-
-```yaml
-- name: Send Email Alert
-  uses: davisulrich/email-action@v1.6.0
-  with:
-    server_address: ${{ secrets.EMAIL_SERVER }}
-    server_port: ${{ secrets.EMAIL_PORT }}
-    username: ${{ secrets.EMAIL_USERNAME }}
-    password: ${{ secrets.EMAIL_PASSWORD }}
-    subject: 'EKS Terraform Deployment Complete'
-    body: 'Check GitHub Actions for details.'
-    to: devops-team@example.com
-```
-
-## Resources
-
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [HashiCorp Terraform GitHub Actions](https://github.com/hashicorp/setup-terraform)
-- [AWS CLI GitHub Actions](https://github.com/aws-actions/configure-aws-credentials)
-- [Security Best Practices for GitHub Actions](https://docs.github.com/en/actions/security-guides)
-- [Terraform Cloud Integration](https://www.terraform.io/cloud-docs)
-
-## Next Steps
-
-1. Copy workflow files to `.github/workflows/` directory
-2. Configure GitHub Secrets
-3. Set up branch protection rules
-4. Configure GitHub Environments
-5. Test workflows with a feature branch
-6. Verify Slack/email notifications
-7. Document team runbooks
-8. Train team on deployment process
+The script automatically detects whether `tf-arch` CLI is installed (`brew install mchittineni/tap/tf-arch`) or executes via `npx -y tf-arch-diagram-generator`.

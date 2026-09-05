@@ -2,10 +2,12 @@
 
 # 🚀 AWS EKS Infrastructure as Code with Terraform
 
-[![Terraform](https://img.shields.io/badge/Terraform-1.13+-623CE4?logo=terraform&logoColor=white)](https://www.terraform.io/)
-[![AWS](https://img.shields.io/badge/AWS-Supported-FF9900?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
-[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
-[![Code Quality](https://img.shields.io/badge/Quality-tfsec%20%26%20Checkov-success)](https://www.tfsec.dev/)
+[![Terraform](https://img.shields.io/badge/Terraform-1.16+-623CE4?logo=terraform&logoColor=white)](https://www.terraform.io/)
+[![AWS Provider](https://img.shields.io/badge/AWS%20Provider-~%3E%206.62.0-FF9900?logo=amazon-aws&logoColor=white)](https://registry.terraform.io/providers/hashicorp/aws/latest)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-1.36+-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Architecture Diagram](https://img.shields.io/badge/Architecture%20Diagram-tf--arch-blue?logo=diagramsdotnet)](https://github.com/mchittineni/tf-arch-diagram-generator)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
+[![Code Quality](https://img.shields.io/badge/Quality-Checkov%20%26%20TFLint-success)](https://github.com/terraform-linters/tflint)
 
 ## 📖 About The Project
 
@@ -13,14 +15,30 @@ Complete Infrastructure as Code (IaC) solution for deploying a production-ready 
 
 ### ✨ Key Features
 
-- ☁️ **AWS-Native EKS**: Amazon EKS managed Kubernetes service with auto-managed control plane
+- ☁️ **AWS-Native EKS**: Amazon EKS managed Kubernetes service (v1.36+) with auto-managed control plane
+- 🐧 **Amazon Linux 2023**: Modern managed node group using `AL2023_x86_64_STANDARD` with automated rolling updates
 - 🔒 **Production-Ready Security**: Multi-AZ deployment, private networking, encryption at rest and in transit
-- 📊 **Integrated Monitoring**: Prometheus and Grafana for metrics, dashboards, and alerting
+- 📊 **Integrated Monitoring**: Prometheus workspace and Grafana for metrics, dashboards, and alerting
 - 🏗️ **Modular Architecture**: Reusable, independently deployable modules (networking, compute, database, monitoring)
 - 📈 **Auto-Scaling**: Configurable node groups (2-10 nodes) with automatic scaling
-- 🗄️ **Managed Database**: Multi-AZ RDS for persistent application data
-- 🧪 **Security Scanning**: tfsec, Checkov, and tflint for continuous compliance
+- 🗄️ **Managed Database**: Amazon RDS PostgreSQL 16 Multi-AZ instance with SSL enforcement and automated backups
+- 🗺️ **Automated Architecture Diagrams**: Real-time cloud diagram generation powered by [tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator)
+- 🧪 **Continuous Compliance**: Checkov, tfsec, and TFLint in GitHub Actions CI/CD workflows
 - 🚀 **Quick Deployment**: 15-25 minute deployment with included helper scripts
+
+---
+
+## 🗺️ Visual Cloud Architecture Diagram
+
+Continuous cloud architecture visualization generated directly from the Terraform plan by **[tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator)**:
+
+![AWS EKS Architecture Diagram](docs/architecture.svg)
+
+> 💡 **Interactive Architecture Viewer**:
+> Explore your live or planned architecture in an interactive web canvas (with resource inspector and containment hierarchy):
+> ```bash
+> ./scripts/generate_diagram.sh --serve
+> ```
 
 ---
 
@@ -29,8 +47,15 @@ Complete Infrastructure as Code (IaC) solution for deploying a production-ready 
 ```
 EKS-Terraform-Infrastructure-Setup/
 │
+├── ⚙️ .github/workflows/                 # Production CI/CD Workflows
+│   ├── validate.yml                     # Syntax, formatting, tflint & Checkov security scan
+│   ├── plan.yml                         # Terraform plan + tf-arch architecture diagram generator
+│   ├── apply.yml                        # Automated apply with post-deploy diagram refresh
+│   ├── destroy.yml                      # Protected manual environment teardown
+│   └── diagram.yml                      # Dedicated on-demand diagram generator
+│
 ├── 📄 Root Configuration Files
-│   ├── main.tf                          # Primary Terraform configuration and provider setup
+│   ├── main.tf                          # Primary Terraform configuration and provider setup (>= 1.16.1, AWS ~> 6.62.0)
 │   ├── variables.tf                     # All input variables with validation rules
 │   ├── outputs.tf                       # Output values for infrastructure endpoints
 │   └── terraform.tfvars.example         # Example configuration template
@@ -39,8 +64,8 @@ EKS-Terraform-Infrastructure-Setup/
 │   │
 │   ├── aws/                             # AWS provider modules
 │   │   ├── compute/
-│   │   │   ├── main.tf                  # EKS cluster, launch templates, node groups
-│   │   │   ├── variables.tf             # Compute module input variables
+│   │   │   ├── main.tf                  # EKS cluster, launch templates, AL2023 node groups
+│   │   │   ├── variables.tf             # Compute module input variables (K8s 1.36+)
 │   │   │   └── outputs.tf               # Cluster endpoints, names, configurations
 │   │   │
 │   │   ├── networking/
@@ -49,23 +74,24 @@ EKS-Terraform-Infrastructure-Setup/
 │   │   │   └── outputs.tf               # VPC IDs, subnet IDs, endpoint references
 │   │   │
 │   │   ├── database/
-│   │   │   ├── main.tf                  # RDS instances, S3 buckets, data stores
+│   │   │   ├── main.tf                  # RDS PostgreSQL 16, S3 backup buckets, SSL params
 │   │   │   ├── variables.tf             # Database configuration and credentials
 │   │   │   └── outputs.tf               # RDS endpoints, bucket names, connection strings
 │   │   │
 │   │   └── monitoring/
-│   │       ├── main.tf                  # CloudWatch, alarms, log groups
+│   │       ├── main.tf                  # CloudWatch, alarms, log groups, SNS alerts
 │   │       ├── variables.tf             # Monitoring thresholds and configurations
 │   │       └── outputs.tf               # Log group names, alarm endpoints
 │   │
 │   └── monitoring/                      # Cross-cloud monitoring stack
 │       └── centralized/
-│           ├── main.tf                  # Prometheus, Grafana, ELK stack deployment
+│           ├── main.tf                  # Prometheus workspace, Grafana workspace deployment
 │           ├── variables.tf             # Monitoring stack configuration
 │           └── outputs.tf               # Dashboard URLs, Prometheus endpoints
 │
 ├── 📁 docs/                             # Comprehensive documentation
 │   ├── architecture.md                  # System design, component relationships
+│   ├── architecture.svg                 # Rendered visual architecture diagram
 │   ├── ci-cd-pipeline.md                # Step-by-step pipeline instructions
 │   ├── deployment-guide.md              # Step-by-step deployment instructions
 │   ├── security.md                      # Security best practices, compliance info
@@ -75,6 +101,7 @@ EKS-Terraform-Infrastructure-Setup/
 │   ├── init.sh                          # Initialize Terraform, create workspaces
 │   ├── deploy.sh                        # Plan and apply Terraform changes
 │   ├── destroy.sh                       # Safely destroy infrastructure
+│   ├── generate_diagram.sh              # Generate architecture diagram via tf-arch
 │   └── ensure_backend_bucket.sh         # Create/configure S3 state backend
 │
 ├── 🔧 Quality & Compliance Configuration
@@ -83,12 +110,7 @@ EKS-Terraform-Infrastructure-Setup/
 │   ├── .tfsec.yml                       # tfsec security scanning rules
 │   └── .gitignore                       # Git ignore patterns
 │
-├── 🔐 State & Lock Files
-│   ├── .terraform.lock.hcl              # Terraform dependency lock file
-│   └── terraform.tfstate*               # State files (not committed)
-│
-└── 📄 This File
-    └── README.md                        # Project documentation (this file)
+└── 📄 README.md                         # Project documentation (this file)
 ```
 
 ---
@@ -110,8 +132,8 @@ EKS-Terraform-Infrastructure-Setup/
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  EKS Cluster (Kubernetes Control Plane)              │   │
-│  │  ├─ Managed Node Groups (Auto Scaling)               │   │
+│  │  EKS Cluster (Kubernetes Control Plane v1.36+)       │   │
+│  │  ├─ Managed Node Groups (AL2023, Auto Scaling)       │   │
 │  │  ├─ Prometheus + Grafana (Monitoring)                │   │
 │  │  ├─ CoreDNS, kube-proxy, VPC CNI                     │   │
 │  │  └─ RBAC & Network Policies                          │   │
@@ -119,7 +141,7 @@ EKS-Terraform-Infrastructure-Setup/
 │                                                             │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Data Layer                                          │   │
-│  │  ├─ RDS (PostgreSQL/MySQL) Multi-AZ                  │   │
+│  │  ├─ RDS PostgreSQL 16 Multi-AZ                       │   │
 │  │  ├─ S3 Buckets (Versioning, Encryption)              │   │
 │  │  ├─ AWS Secrets Manager                              │   │
 │  │  └─ DynamoDB (Optional)                              │   │
@@ -128,9 +150,9 @@ EKS-Terraform-Infrastructure-Setup/
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Observability & Logging                             │   │
 │  │  ├─ CloudWatch Logs & Alarms                         │   │
-│  │  ├─ Prometheus Metrics                               │   │
-│  │  ├─ Grafana Dashboards                               │   │
-│  │  └─ ELK Stack (Elasticsearch, Logstash, Kibana)      │   │
+│  │  ├─ Prometheus Metrics Workspace                     │   │
+│  │  ├─ Grafana Workspaces & Dashboards                  │   │
+│  │  └─ Amazon SNS Alerting                              │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
@@ -147,19 +169,19 @@ EKS-Terraform-Infrastructure-Setup/
 - AWS Secrets Manager setup for storing Terraform metadata
 
 ### **variables.tf** - Input Variables
-| Variable | Type | Purpose | Default |
-|----------|------|---------|---------|
-| `project_name` | string | Project identifier for tagging | "AWS-Infra" |
-| `environment` | string | dev, staging, or production | - |
-| `owner_email` | string | Infrastructure owner contact (validated) | - |
-| `alert_email` | string | Alert notification recipient (validated) | - |
-| `aws_region` | string | AWS region for deployment | "us-east-1" |
-| `aws_node_count` | number | EKS worker nodes (2-10) | 6 |
-| `aws_instance_type` | string | EC2 instance type for nodes | "t3.medium" |
-| `enable_monitoring` | bool | Enable Prometheus/Grafana stack | true |
-| `enable_aws` | bool | Enable AWS infrastructure | true |
-| `grafana_admin_password` | string | Grafana password (12+ chars, complex) | - |
-| `aws_db_multi_az` | bool | Multi-AZ RDS deployment | true |
+| Variable                 | Type   | Purpose                                  | Default     |
+| ------------------------ | ------ | ---------------------------------------- | ----------- |
+| `project_name`           | string | Project identifier for tagging           | "AWS-Infra" |
+| `environment`            | string | dev, staging, or production              | -           |
+| `owner_email`            | string | Infrastructure owner contact (validated) | -           |
+| `alert_email`            | string | Alert notification recipient (validated) | -           |
+| `aws_region`             | string | AWS region for deployment                | "us-east-1" |
+| `aws_node_count`         | number | EKS worker nodes (2-10)                  | 6           |
+| `aws_instance_type`      | string | EC2 instance type for nodes              | "t3.medium" |
+| `enable_monitoring`      | bool   | Enable Prometheus/Grafana stack          | true        |
+| `enable_aws`             | bool   | Enable AWS infrastructure                | true        |
+| `grafana_admin_password` | string | Grafana password (12+ chars, complex)    | -           |
+| `aws_db_multi_az`        | bool   | Multi-AZ RDS deployment                  | true        |
 
 ### **outputs.tf** - Infrastructure Outputs
 Exposes critical infrastructure endpoints:
@@ -177,19 +199,20 @@ Exposes critical infrastructure endpoints:
 
 ```bash
 # Required tools
-- Terraform >= 1.13.0
+- Terraform >= 1.16.1
+- Node.js >= 24 (required for tf-arch-diagram-generator)
 - AWS CLI v2 (configured with credentials)
-- kubectl (for Kubernetes interactions)
+- kubectl (for Kubernetes cluster interactions)
 - Git
 
 # AWS Permissions Required
-- S3 (create/manage buckets for state)
-- EC2 (create VPC, subnets, security groups)
-- EKS (create/manage clusters)
-- RDS (create database instances)
-- CloudWatch (logs and monitoring)
-- IAM (roles and policies)
-- SecretsManager (store secrets)
+- S3 (create/manage buckets for state and backups)
+- EC2 (create VPC, subnets, security groups, route tables)
+- EKS (create/manage clusters and managed node groups)
+- RDS (create database instances, parameter groups, subnet groups)
+- CloudWatch & SNS (logs, metrics, dashboards, and alerting)
+- IAM (roles and policies for cluster, nodes, and monitoring)
+- Secrets Manager (store database and admin credentials)
 ```
 
 ### Installation & Setup
@@ -212,7 +235,7 @@ nano terraform.tfvars
 # - aws_node_count: 2-10 (recommended: 6)
 # - grafana_admin_password: 12+ chars, uppercase, lowercase, number, special char
 
-# 4. Configure AWS Credentials into your local
+# 4. Configure AWS Credentials into your local terminal
 export AWS_ACCESS_KEY_ID="xxxxxxx"
 export AWS_SECRET_ACCESS_KEY="xxxxxxx"
 export AWS_SESSION_TOKEN="xxxxxxx"
@@ -227,7 +250,10 @@ export AWS_REGION=us-east-1
 # 7. Plan deployment
 terraform plan -out=tfplan
 
-# 8. Apply configuration
+# 8. Generate Visual Cloud Architecture Diagram
+./scripts/generate_diagram.sh dev --serve
+
+# 9. Apply configuration
 terraform apply tfplan
 ```
 
@@ -393,6 +419,7 @@ Initializes Terraform environment:
 ./scripts/init.sh
 
 # Actions:
+# - Ensures Secrets Manager secret and backend bucket exist
 # - Initializes Terraform backend
 # - Creates dev, staging, production workspaces
 # - Sets default workspace to current environment
@@ -409,8 +436,7 @@ Plans and applies infrastructure changes:
 # Actions:
 # - Switches to specified workspace
 # - Runs terraform plan
-# - Prompts for confirmation
-# - Applies changes if approved
+# - Applies changes
 ```
 
 ### **destroy.sh**
@@ -423,8 +449,21 @@ Safely destroys infrastructure:
 
 # Actions:
 # - Switches to specified workspace
-# - Double-confirms destruction
-# - Removes all resources in environment
+# - Prompts for explicit confirmation
+# - Destroys resources in environment
+```
+
+### **generate_diagram.sh**
+Generates and serves visual cloud architecture diagrams using [tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator):
+```bash
+# Generate architecture.svg from active workspace
+./scripts/generate_diagram.sh dev
+
+# Generate diagram and launch interactive canvas in your default browser
+./scripts/generate_diagram.sh dev --serve
+
+# Render diagram from an existing JSON plan file
+./scripts/generate_diagram.sh --plan plan.json -o docs/architecture.svg
 ```
 
 ### **ensure_backend_bucket.sh**
@@ -439,6 +478,46 @@ export AWS_REGION=us-east-1
 # - Enables server-side encryption
 # - Configures bucket policies
 ```
+
+---
+
+## 🗺️ Architecture Diagram Plan Generator
+
+This project integrates **[tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator)** directly into the developer workflow and CI/CD pipelines.
+
+### Capabilities
+- **Exact Cloud Topology**: Generates containment hierarchy (VPC → Availability Zones → Public/Private Subnets → EKS Nodes, RDS, Gateways) from the Terraform plan JSON (`terraform show -json`).
+- **Zero Browser Dependencies**: Runs headlessly in CI to produce clean, crisp vector SVGs (`docs/architecture.svg`).
+- **Interactive Local Viewer**: `tf-arch serve plan.json --open` opens a web canvas with directional traffic spotlighting, resource inspection drawers, and connection links.
+- **Plan-Aware Indicators**: Badges nodes with `+ create`, `~ update`, and `- destroy` states.
+
+### Installation Options for Diagram Generator
+```bash
+# Option 1: macOS via Homebrew (Recommended)
+brew install mchittineni/tap/tf-arch
+
+# Option 2: npm global or npx
+npm install -g tf-arch-diagram-generator
+# or run directly with npx:
+npx -y tf-arch-diagram-generator --help
+
+# Option 3: Python (pip / uv)
+pip install tf-arch-diagram-generator
+```
+
+---
+
+## 🔄 GitHub Actions CI/CD Workflows
+
+The repository includes 5 production-grade workflows located in `.github/workflows/`:
+
+| Workflow                | File                                             | Trigger                      | Purpose                                                                                                             |
+| :---------------------- | :----------------------------------------------- | :--------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| **Validate & Security** | [`validate.yml`](.github/workflows/validate.yml) | Push to `main`, PRs          | `terraform fmt`, `terraform validate`, `tflint` (AWS ruleset 0.38+), Checkov security scan                          |
+| **Plan & Diagram**      | [`plan.yml`](.github/workflows/plan.yml)         | Pull Requests, Dispatch      | OIDC login, `terraform plan`, renders `docs/architecture.svg` via `tf-arch-diagram-generator`, and posts PR comment |
+| **Apply**               | [`apply.yml`](.github/workflows/apply.yml)       | Push to `main`, Dispatch     | Deploys infrastructure, re-renders architecture diagram from state, captures outputs                                |
+| **Diagram Generator**   | [`diagram.yml`](.github/workflows/diagram.yml)   | Manual (`workflow_dispatch`) | On-demand diagram regeneration with option to auto-commit `docs/architecture.svg`                                   |
+| **Protected Destroy**   | [`destroy.yml`](.github/workflows/destroy.yml)   | Manual (`workflow_dispatch`) | Safe environment teardown with required "DESTROY" confirmation string                                               |
 
 ---
 
@@ -484,16 +563,16 @@ export AWS_REGION=us-east-1
 
 ## 📊 Cost Estimation
 
-| Component | AWS | Estimate/Month |
-|-----------|-----|---|
-| VPC + NAT Gateway | - | ~$32 |
-| EKS Control Plane | - | $73 |
-| EC2 Nodes (3x t3.medium) | - | ~$100 |
-| RDS Multi-AZ | - | ~$150 |
-| CloudWatch Logs | - | ~$20 |
-| S3 Storage | - | ~$5 |
-| **Total (Dev)** | **AWS** | **~$380** |
-| **Total (Production)** | **AWS** | **~$1500+** |
+| Component                | AWS     | Estimate/Month |
+| ------------------------ | ------- | -------------- |
+| VPC + NAT Gateway        | -       | ~$32           |
+| EKS Control Plane        | -       | $73            |
+| EC2 Nodes (3x t3.medium) | -       | ~$100          |
+| RDS Multi-AZ             | -       | ~$150          |
+| CloudWatch Logs          | -       | ~$20           |
+| S3 Storage               | -       | ~$5            |
+| **Total (Dev)**          | **AWS** | **~$380**      |
+| **Total (Production)**   | **AWS** | **~$1500+**    |
 
 *Estimates based on us-east-1 region, standard configurations*
 

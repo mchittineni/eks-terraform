@@ -4,7 +4,8 @@
 
 Before deploying, ensure you have:
 
-- **Terraform** >= 1.13.0 ([Install](https://www.terraform.io/downloads.html))
+- **Terraform** >= 1.16.1 ([Install](https://www.terraform.io/downloads.html))
+- **Node.js** >= 24 (for [tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator))
 - **AWS CLI** configured with credentials ([Setup](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html))
 - **kubectl** installed for Kubernetes management ([Install](https://kubernetes.io/docs/tasks/tools/))
 - **AWS Account** with appropriate permissions (EC2, EKS, RDS, VPC, IAM)

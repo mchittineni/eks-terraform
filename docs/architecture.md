@@ -1,70 +1,72 @@
 # EKS Terraform Infrastructure - Architecture Overview
 
+## Visual Architecture Diagram
+
+The infrastructure architecture diagram below is generated automatically from the Terraform plan using [tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator).
+
+![AWS EKS Architecture Diagram](architecture.svg)
+
+> **Interactive Viewer**: Run `./scripts/generate_diagram.sh --serve` to explore the architecture interactively in your browser with resource inspection and dependency tracing.
+
+---
+
 ## High-Level Architecture
 
-This infrastructure provides a complete AWS-based Kubernetes solution with:
-- **AWS Region**: Configurable (default: us-east-1)
-- **Kubernetes Cluster**: Amazon EKS (Elastic Kubernetes Service)
-- **Multi-AZ Deployment**: High availability across multiple availability zones
-- **Monitoring Stack**: Prometheus and Grafana for observability
-- **Database**: Amazon RDS for persistent data
+This infrastructure provides a complete, production-grade AWS-based Kubernetes solution featuring:
+- **AWS Region**: Configurable (default: `us-east-1`)
+- **Kubernetes Cluster**: Amazon EKS v1.36+ with auto-managed control plane
+- **Worker Nodes**: Amazon Linux 2023 (`AL2023_x86_64_STANDARD`) managed node group with auto-scaling (2-10 nodes)
+- **Multi-AZ Deployment**: High availability across 3 Availability Zones (`us-east-1a`, `us-east-1b`, `us-east-1c`)
+- **Managed Database**: Amazon RDS PostgreSQL 16 Multi-AZ instance with automated backups and encryption
+- **Observability Stack**: Amazon Managed Service for Prometheus (AMP) and Amazon Managed Grafana (AMG) / centralized monitoring
+
+---
 
 ## Core Components
 
-### Networking Module (`modules/aws/networking`)
-- **VPC**: Custom CIDR block (default: 10.0.0.0/16)
-- **Public Subnets**: 3 subnets for NAT gateways and load balancers
-- **Private Subnets**: 3 subnets for EKS nodes and internal resources
-- **Availability Zones**: Distributed across 3 AZs for high availability
-- **NAT Gateways**: For secure outbound traffic from private subnets
-- **Internet Gateway**: For public subnet internet access
-- **Route Tables**: Properly configured for public/private routing
+### 1. Networking Module (`modules/aws/networking`)
+- **VPC**: Dedicated CIDR block (default: `10.0.0.0/16`) with DNS hostnames and support enabled
+- **Public Subnets**: 3 subnets (`10.0.1.0/24`, `10.0.2.0/24`, `10.0.3.0/24`) tagged with `kubernetes.io/role/elb = 1` for internet-facing ALBs
+- **Private Subnets**: 3 subnets (`10.0.11.0/24`, `10.0.12.0/24`, `10.0.13.0/24`) tagged with `kubernetes.io/role/internal-elb = 1` for internal workloads and RDS
+- **NAT Gateways**: High-availability multi-AZ egress via dedicated Elastic IPs per availability zone
+- **Internet Gateway**: Public subnet edge routing
+- **Route Tables**: Strict public/private separation with least-privilege egress routes
 
-### Compute Module (`modules/aws/compute`)
-- **EKS Cluster**: Managed Kubernetes control plane
-- **Node Groups**: Auto-scaling worker nodes (default: 6 nodes, t3.medium)
-- **IAM Roles**: Proper permissions for nodes and cluster
-- **Security Groups**: Network access control for cluster communication
-- **Auto Scaling**: Configurable node count (2-10 nodes)
+### 2. Compute Module (`modules/aws/compute`)
+- **EKS Cluster**: Managed Kubernetes control plane (default: v1.36) with private and public endpoint access
+- **Managed Node Group**:
+  - AMI: Amazon Linux 2023 (`AL2023_x86_64_STANDARD`)
+  - Instance Type: Configurable (default: `t3.medium`)
+  - Auto-scaling: Configurable node count (default: 6 nodes, bounds: 2-10)
+  - Subnets: Deployed exclusively in private subnets for security
+- **IAM Roles**: Least-privilege roles for control plane (`AmazonEKSClusterPolicy`, `AmazonEKSServicePolicy`) and worker nodes (`AmazonEKSWorkerNodePolicy`, `AmazonEKS_CNI_Policy`, `AmazonEC2ContainerRegistryReadOnly`)
+- **Security Groups**: Granular control plane and node security groups restricting port 443 API access
 
-### Database Module (`modules/aws/database`)
-- **RDS Instance**: Multi-AZ capable for high availability
-- **Instance Type**: Configurable (default: db.t3.medium)
-- **Storage**: Allocated storage in GB (default: 100 GB)
-- **Multi-AZ**: Automatic failover capability
-- **Backups**: Automated daily backups with configurable retention
-- **Security**: Encrypted at rest and in transit
+### 3. Database Module (`modules/aws/database`)
+- **RDS PostgreSQL Instance**: Version 16 LTS with Multi-AZ failover capability
+- **Parameter Group**: Custom `postgres16` parameter group enforcing SSL (`rds.force_ssl = 1`)
+- **Storage**: 100 GB allocated GP3 storage with auto-scaling storage enabled
+- **Security**: Encrypted at rest via AWS KMS / SSE, private subnet isolation, credentials stored in AWS Secrets Manager
+- **Backups**: Automated daily snapshots + dedicated S3 backup bucket with versioning and public access block
 
-### Monitoring Module (`modules/monitoring/centralized`)
-- **Prometheus**: Metrics collection and storage (retention: 7-90 days)
-- **Grafana**: Visualization and dashboards
-- **Admin Password**: Strong password validation enforced
-- **Data Persistence**: Configured storage for metrics retention
-- **Alerting**: Integration capabilities for notifications
+### 4. Monitoring Stack (`modules/aws/monitoring` & `modules/monitoring/centralized`)
+- **CloudWatch Logs**: EKS control plane logging (API, audit, authenticator, controllerManager, scheduler)
+- **Prometheus**: Amazon Managed Service for Prometheus workspace for cluster and application metrics
+- **Grafana**: Centralized visualization workspace with role-based IAM integration and secure admin password rotation
+- **Alerting**: Amazon SNS topic subscriptions for critical infrastructure alarms and error spikes
 
-## Key Features
+---
 
-### High Availability
-- Multi-AZ deployment across 3 availability zones
-- Auto-scaling node groups for workload demands
-- Multi-AZ RDS with automatic failover
-- Load balancer for service distribution
+## Automated Diagram Generation
 
-### Security
-- Network segmentation with public/private subnets
-- IAM roles following principle of least privilege
-- Encryption at rest and in transit
-- Security groups for network access control
-- VPC isolation and control
+Architecture diagrams are continuously generated in CI/CD and locally:
 
-### Observability
-- Prometheus for metrics collection
-- Grafana dashboards for visualization
-- Configurable retention periods (7-90 days)
-- Integration with AWS CloudWatch
+```bash
+# Generate architecture.svg from Terraform plan
+./scripts/generate_diagram.sh dev -o docs/architecture.svg
 
-### Scalability
-- Configurable node count (2-10 nodes)
-- Auto-scaling policies for workloads
-- RDS storage capacity management
-- Prometheus data retention optimization
+# Or generate and open interactive canvas in browser
+./scripts/generate_diagram.sh dev --serve
+```
+
+Diagrams are produced by **[tf-arch-diagram-generator](https://github.com/mchittineni/tf-arch-diagram-generator)** directly from `terraform show -json` output, capturing VPC nesting, subnets, compute, databases, and network connectors without browser dependencies.
