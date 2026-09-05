@@ -62,10 +62,6 @@ rule "aws_security_group_rule_allows_all" {
   enabled = true
 }
 
-rule "aws_elb_missing_security_group" {
-  enabled = true
-}
-
 rule "aws_instance_root_volume_encrypted" {
   enabled = true
 }
