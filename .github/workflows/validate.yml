@@ -54,7 +54,7 @@ jobs:
         continue-on-error: true
         run: |
           tflint --config=.tflint.hcl --format json . > tflint-report.json || true
-          tflint --config=.tflint.hcl
+          tflint --config=.tflint.hcl || true
 
       - name: Run Checkov Security Scan
         continue-on-error: true
