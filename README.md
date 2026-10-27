@@ -8,6 +8,12 @@
 [![Architecture Diagram](https://img.shields.io/badge/Architecture%20Diagram-tf--arch-blue?logo=diagramsdotnet)](https://github.com/mchittineni/tf-arch-diagram-generator)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![Code Quality](https://img.shields.io/badge/Quality-Checkov%20%26%20TFLint-success)](https://github.com/terraform-linters/tflint)
+[![CI](https://github.com/mchittineni/eks-terraform/actions/workflows/validate.yml/badge.svg)](https://github.com/mchittineni/eks-terraform/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mchittineni/eks-terraform/pulls)
+
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=000000)](https://buymeacoffee.com/mchittineni)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-24292F?style=for-the-badge&logo=githubsponsors&logoColor=EA4AAA)](https://github.com/sponsors/mchittineni)
 
 ## 📖 About The Project
 
